@@ -14,7 +14,7 @@
 apply plugin: 'java-library'
 
 jar {
-  baseName 'pantheon'
+  baseName 'pantheon-graphql-rpc'
   manifest {
     attributes(
       'Specification-Title': baseName,
@@ -28,47 +28,44 @@ jar {
 dependencies {
   implementation project(':config')
   implementation project(':crypto')
-  implementation project(':consensus:common')
-  implementation project(':consensus:clique')
-  implementation project(':consensus:ibft')
-  implementation project(':consensus:ibftlegacy')
+  implementation project(':enclave')
   implementation project(':ethereum:blockcreation')
   implementation project(':ethereum:core')
   implementation project(':ethereum:eth')
-  implementation project(':ethereum:jsonrpc')
-  implementation project(':ethereum:graphqlrpc')
-  implementation project(':ethereum:permissioning')
   implementation project(':ethereum:p2p')
   implementation project(':ethereum:rlp')
+  implementation project(':ethereum:permissioning')
   implementation project(':metrics:core')
-  implementation project(':enclave')
-  implementation project(':services:kvstore')
 
+  implementation 'com.graphql-java:graphql-java:11.0'
   implementation 'com.google.guava:guava'
-  implementation 'info.picocli:picocli'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
   implementation 'net.consensys.cava:cava-toml'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.springframework.security:spring-security-crypto'
+  implementation 'io.vertx:vertx-auth-jwt:3.6.2'
 
-  runtime 'org.apache.logging.log4j:log4j-core'
-
-  testImplementation project(':testutil')
+  testImplementation project(':config')
+  testImplementation project(path: ':config', configuration: 'testSupportArtifacts')
+  testImplementation project(path: ':ethereum:core', configuration: 'testArtifacts')
   testImplementation project(path: ':ethereum:core', configuration: 'testSupportArtifacts')
+  testImplementation project(':services:kvstore')
+  testImplementation project(':testutil')
 
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'junit:junit'
   testImplementation 'org.assertj:assertj-core'
-  testImplementation 'org.awaitility:awaitility'
   testImplementation 'org.mockito:mockito-core'
-  testImplementation 'org.apache.commons:commons-text'
-}
+  testImplementation 'io.vertx:vertx-codegen'
+  testImplementation 'io.vertx:vertx-unit'
 
-task writeInfoFile(type: ProjectPropertiesFile) {
-  destPackage = "tech.pegasys.pantheon"
-  addString("clientIdentity", rootProject.name)
-  addVersion("version", "clientIdentity")
-}
+  integrationTestImplementation project(':config')
+  integrationTestImplementation project(path: ':config', configuration: 'testSupportArtifacts')
+  integrationTestImplementation project(path: ':ethereum:core', configuration: 'testSupportArtifacts')
+  integrationTestImplementation project(':services:kvstore')
+  integrationTestImplementation project(':testutil')
 
-compileJava.dependsOn(writeInfoFile)
+  integrationTestImplementation 'junit:junit'
+  integrationTestImplementation 'org.assertj:assertj-core'
+  integrationTestImplementation 'org.mockito:mockito-core'
+}

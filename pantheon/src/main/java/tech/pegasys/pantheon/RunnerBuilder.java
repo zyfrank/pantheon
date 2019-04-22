@@ -21,6 +21,11 @@ import tech.pegasys.pantheon.ethereum.chain.Blockchain;
 import tech.pegasys.pantheon.ethereum.core.PrivacyParameters;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetchers;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLProvider;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLRpcConfiguration;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLRpcHttpService;
 import tech.pegasys.pantheon.ethereum.jsonrpc.JsonRpcConfiguration;
 import tech.pegasys.pantheon.ethereum.jsonrpc.JsonRpcHttpService;
 import tech.pegasys.pantheon.ethereum.jsonrpc.JsonRpcMethodsFactory;
@@ -71,6 +76,7 @@ import tech.pegasys.pantheon.metrics.prometheus.MetricsService;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.enode.EnodeURL;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -95,6 +101,7 @@ public class RunnerBuilder {
   private int listenPort;
   private int maxPeers;
   private JsonRpcConfiguration jsonRpcConfiguration;
+  //  private GraphQLRpcConfiguration graphQLRpcConfiguration;
   private WebSocketConfiguration webSocketConfiguration;
   private Path dataDir;
   private Collection<String> bannedNodeIds;
@@ -156,7 +163,13 @@ public class RunnerBuilder {
     this.jsonRpcConfiguration = jsonRpcConfiguration;
     return this;
   }
-
+  /*
+    public RunnerBuilder graphQLRpcConfiguration(
+        final GraphQLRpcConfiguration graphQLRpcConfiguration) {
+      this.graphQLRpcConfiguration = graphQLRpcConfiguration;
+      return this;
+    }
+  */
   public RunnerBuilder webSocketConfiguration(final WebSocketConfiguration webSocketConfiguration) {
     this.webSocketConfiguration = webSocketConfiguration;
     return this;
@@ -347,6 +360,19 @@ public class RunnerBuilder {
                   vertx, dataDir, jsonRpcConfiguration, metricsSystem, jsonRpcMethods));
     }
 
+    BlockchainQuery queries =
+        new BlockchainQuery(context.getBlockchain(), context.getWorldStateArchive());
+    GraphQLDataFetchers fetchers = new GraphQLDataFetchers(queries);
+    GraphQLProvider provider = new GraphQLProvider(fetchers);
+    try {
+      provider.init();
+    } catch (IOException e) {
+
+    }
+    Optional<GraphQLRpcHttpService> graphQLRpcHttpService =
+        Optional.of(
+            new GraphQLRpcHttpService(
+                vertx, dataDir, GraphQLRpcConfiguration.createDefault(), provider, metricsSystem));
     Optional<WebSocketService> webSocketService = Optional.empty();
     if (webSocketConfiguration.isEnabled()) {
       final Map<String, JsonRpcMethod> webSocketsJsonRpcMethods =
@@ -392,6 +418,7 @@ public class RunnerBuilder {
         vertx,
         networkRunner,
         jsonRpcHttpService,
+        graphQLRpcHttpService,
         webSocketService,
         metricsService,
         pantheonController,
