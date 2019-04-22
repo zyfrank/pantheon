@@ -101,11 +101,11 @@ public class PipelineChainDownloader<C> implements ChainDownloader {
 
   private CompletionStage<Void> repeatUnlessDownloadComplete(
       @SuppressWarnings("unused") final Void result) {
+    syncState.clearSyncTarget();
     if (syncTargetManager.shouldContinueDownloading()) {
       return performDownload();
     } else {
       LOG.info("Chain download complete");
-      syncState.clearSyncTarget();
       return completedFuture(null);
     }
   }
@@ -113,12 +113,6 @@ public class PipelineChainDownloader<C> implements ChainDownloader {
   private CompletionStage<Void> handleFailedDownload(final Throwable error) {
     pipelineErrorCounter.inc();
     final Throwable rootCause = ExceptionUtils.rootCause(error);
-    if (!cancelled.get() && rootCause instanceof CancellationException) {
-      // Weird but when Pantheon shuts down we get an unexpected CancellationException
-      // when the scheduler shuts down and to prevent the fast sync state from being deleted have
-      // to ensure we stop doing anything, but never complete.
-      return new CompletableFuture<>();
-    }
     if (!cancelled.get()
         && syncTargetManager.shouldContinueDownloading()
         && !(rootCause instanceof CancellationException)) {
