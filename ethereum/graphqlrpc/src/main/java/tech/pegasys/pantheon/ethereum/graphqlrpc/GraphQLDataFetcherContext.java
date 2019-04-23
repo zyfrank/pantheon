@@ -13,6 +13,9 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import tech.pegasys.pantheon.ethereum.blockcreation.MiningCoordinator;
+import tech.pegasys.pantheon.ethereum.chain.Blockchain;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
 
 public class GraphQLDataFetcherContext {
 
@@ -20,8 +23,10 @@ public class GraphQLDataFetcherContext {
   private MiningCoordinator miningCoordinator;
 
   public GraphQLDataFetcherContext(
-      final BlockchainQuery blockchain, final MiningCoordinator miningCoordinator) {
-    this.blockchain = blockchain;
+      final Blockchain blockchain,
+      final WorldStateArchive worldStateArchive,
+      final MiningCoordinator miningCoordinator) {
+    this.blockchain = new BlockchainQuery(blockchain, worldStateArchive);
     this.miningCoordinator = miningCoordinator;
   }
 

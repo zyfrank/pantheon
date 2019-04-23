@@ -21,7 +21,6 @@ import tech.pegasys.pantheon.ethereum.chain.Blockchain;
 import tech.pegasys.pantheon.ethereum.core.PrivacyParameters;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetchers;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLProvider;
@@ -365,11 +364,12 @@ public class RunnerBuilder {
                   vertx, dataDir, jsonRpcConfiguration, metricsSystem, jsonRpcMethods));
     }
 
-    BlockchainQuery queries =
-        new BlockchainQuery(context.getBlockchain(), context.getWorldStateArchive());
+    //  BlockchainQuery queries =
+    //    new BlockchainQuery(context.getBlockchain(), context.getWorldStateArchive());
     GraphQLDataFetchers fetchers = new GraphQLDataFetchers(supportedCapabilities);
     GraphQLDataFetcherContext dataFetcherContext =
-        new GraphQLDataFetcherContext(queries, miningCoordinator);
+        new GraphQLDataFetcherContext(
+            context.getBlockchain(), context.getWorldStateArchive(), miningCoordinator);
     GraphQL graphQL = null;
     try {
       graphQL = GraphQLProvider.buildGraphQL(fetchers);

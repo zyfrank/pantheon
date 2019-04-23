@@ -173,7 +173,7 @@ public class Runner implements AutoCloseable {
       properties.setProperty("json-rpc", String.valueOf(getJsonRpcPort().get()));
     }
     if (getGraphQLRpcPort().isPresent()) {
-      properties.setProperty("json-rpc", String.valueOf(getGraphQLRpcPort().get()));
+      properties.setProperty("graphql-rpc", String.valueOf(getGraphQLRpcPort().get()));
     }
     if (getWebsocketPort().isPresent()) {
       properties.setProperty("ws-rpc", String.valueOf(getWebsocketPort().get()));

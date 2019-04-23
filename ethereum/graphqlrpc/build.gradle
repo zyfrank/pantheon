@@ -37,7 +37,7 @@ dependencies {
   implementation project(':ethereum:permissioning')
   implementation project(':metrics:core')
 
-  implementation 'com.graphql-java:graphql-java:11.0'
+  implementation 'com.graphql-java:graphql-java'
   implementation 'com.google.guava:guava'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'

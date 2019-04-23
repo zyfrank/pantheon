@@ -44,7 +44,7 @@ dependencies {
   implementation project(':enclave')
   implementation project(':services:kvstore')
 
-  implementation 'com.graphql-java:graphql-java:11.0'
+  implementation 'com.graphql-java:graphql-java'
   implementation 'com.google.guava:guava'
   implementation 'info.picocli:picocli'
   implementation 'io.vertx:vertx-core'
