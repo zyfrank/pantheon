@@ -365,7 +365,8 @@ public class RunnerBuilder {
 
     BlockchainQuery queries =
         new BlockchainQuery(context.getBlockchain(), context.getWorldStateArchive());
-    GraphQLDataFetchers fetchers = new GraphQLDataFetchers(queries);
+    GraphQLDataFetchers fetchers =
+        new GraphQLDataFetchers(queries, miningCoordinator, supportedCapabilities);
     GraphQLProvider provider = new GraphQLProvider(fetchers);
     try {
       provider.init();
@@ -375,7 +376,12 @@ public class RunnerBuilder {
     Optional<GraphQLRpcHttpService> graphQLRpcHttpService =
         Optional.of(
             new GraphQLRpcHttpService(
-                vertx, dataDir, GraphQLRpcConfiguration.createDefault(), provider, metricsSystem));
+                vertx,
+                dataDir,
+                GraphQLRpcConfiguration.createDefault(),
+                provider,
+                queries,
+                metricsSystem));
     Optional<WebSocketService> webSocketService = Optional.empty();
     if (webSocketConfiguration.isEnabled()) {
       final Map<String, JsonRpcMethod> webSocketsJsonRpcMethods =

@@ -17,8 +17,12 @@ import tech.pegasys.pantheon.util.bytes.Bytes32;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedLong;
+import graphql.schema.DataFetchingEnvironment;
 
 public class BlockAdapter {
   public BlockAdapter(final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData) {
@@ -26,9 +30,15 @@ public class BlockAdapter {
   }
 
   private final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData;
-
+  /*
   public Hash getParentHash() {
     return blockWithMetaData.getHeader().getParentHash();
+  }
+  */
+  public BlockAdapter getParent(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = environment.getContext();
+    Hash parentHash = blockWithMetaData.getHeader().getParentHash();
+    return new BlockAdapter(query.blockByHash(parentHash).get());
   }
 
   public Bytes32 getHash() {
@@ -95,10 +105,27 @@ public class BlockAdapter {
     return blockWithMetaData.getOmmers().size();
   }
 
-  //    ommers: [Block]
-  //    # OmmerAt returns the ommer (AKA uncle) at the specified index. If ommers
-  //   # are unavailable, or the index is out of bounds, this field will be null.
-  //   ommerAt(index: Int!): Block
+  public List<BlockAdapter> getOmmers(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = environment.getContext();
+    List<Hash> ommers = blockWithMetaData.getOmmers();
+    List<BlockAdapter> results = new ArrayList<BlockAdapter>();
+    for (Hash item : ommers) {
+      results.add(new BlockAdapter(query.blockByHash(item).get()));
+    }
+    return results;
+  }
+
+  public BlockAdapter getOmmerAt(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = environment.getContext();
+    int index = environment.getArgument("index");
+    List<Hash> ommers = blockWithMetaData.getOmmers();
+    Hash result = ommers.get(index);
+    if (result != null) {
+      return new BlockAdapter(query.blockByHash(result).get());
+    }
+    return null;
+  }
+
   public Bytes32 getOmmerHash() {
     return blockWithMetaData.getHeader().getOmmersHash();
   }

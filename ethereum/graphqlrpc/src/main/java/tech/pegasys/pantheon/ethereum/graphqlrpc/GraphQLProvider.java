@@ -67,10 +67,16 @@ public class GraphQLProvider {
         .scalar(new LongScalar())
         .scalar(new BigIntScalar())
         .type(
-            newTypeWiring("Query").dataFetcher("block", graphQLDataFetchers.getBlockDataFetcher()))
-        .type(
-            newTypeWiring("Block")
-                .dataFetcher("parent", graphQLDataFetchers.getBlockParentDataFetcher()))
+            newTypeWiring("Query")
+                .dataFetcher("block", graphQLDataFetchers.getBlockDataFetcher())
+                .dataFetcher("blocks", graphQLDataFetchers.getRangeBlockDataFetcher())
+                .dataFetcher("transaction", graphQLDataFetchers.getTransactionDataFetcher())
+                .dataFetcher("gasPrice", graphQLDataFetchers.getGasPriceDataFetcher())
+                .dataFetcher(
+                    "protocolVersion", graphQLDataFetchers.getProtocolVersionDataFetcher()))
+        /*.type(
+        newTypeWiring("Block")
+            .dataFetcher("parent", graphQLDataFetchers.getBlockParentDataFetcher()))*/
         .build();
   }
 }

@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQLError;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -70,6 +71,9 @@ public class GraphQLRpcHttpService {
   private HttpServer httpServer;
 
   private GraphQLProvider graphQlProvider;
+
+  // as GraphQL context data
+  private BlockchainQuery blockchain;
   /**
    * Construct a GraphQLRpcHttpService handler
    *
@@ -84,6 +88,7 @@ public class GraphQLRpcHttpService {
       final Path dataDir,
       final GraphQLRpcConfiguration config,
       final GraphQLProvider graphQlProvider,
+      final BlockchainQuery blockchain,
       final MetricsSystem metricsSystem) {
     this.dataDir = dataDir;
 
@@ -91,6 +96,7 @@ public class GraphQLRpcHttpService {
     this.config = config;
     this.vertx = vertx;
     this.graphQlProvider = graphQlProvider;
+    this.blockchain = blockchain;
   }
 
   private void validateConfig(final GraphQLRpcConfiguration config) {
@@ -292,14 +298,16 @@ public class GraphQLRpcHttpService {
     }
   */
   private GraphQLRpcResponse process(final String requestJson) {
-
-    ExecutionResult result = graphQlProvider.graphQL().execute(requestJson);
+    ExecutionInput executionInput =
+        ExecutionInput.newExecutionInput().query(requestJson).context(blockchain).build();
+    ExecutionResult result = graphQlProvider.graphQL().execute(executionInput);
     List<GraphQLError> errors = result.getErrors();
-    if ((errors == null) || (errors.size() == 0)) {
+    return new GraphQLRpcSuccessResponse(errors, result);
+    /*   if ((errors == null) || (errors.size() == 0)) {
       return new GraphQLRpcSuccessResponse(null, result.getData());
     } else {
       return new GraphQLRpcSuccessResponse(null, errors);
-    }
+    }*/
   }
 
   private void handleGraphQLRpcError(

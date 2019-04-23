@@ -1,0 +1,118 @@
+/*
+ * Copyright 2019 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+package tech.pegasys.pantheon.ethereum.graphqlrpc;
+
+import tech.pegasys.pantheon.ethereum.core.Hash;
+import tech.pegasys.pantheon.util.bytes.BytesValue;
+import tech.pegasys.pantheon.util.uint.UInt256;
+
+import com.google.common.primitives.UnsignedLong;
+import graphql.schema.DataFetchingEnvironment;
+
+public class TransactionAdapter {
+  private TransactionWithMetadata transactionWithMetadata;
+
+  public TransactionAdapter(final TransactionWithMetadata transactionWithMetadata) {
+    this.transactionWithMetadata = transactionWithMetadata;
+  }
+
+  public Hash getHash() {
+    return transactionWithMetadata.getTransaction().hash();
+  }
+
+  public long getNonce() {
+    return transactionWithMetadata.getTransaction().getNonce();
+  }
+
+  public int getIndex() {
+    return 1;
+  }
+  //  # Index is the index of this transaction in the parent block. This will
+  //   # be null if the transaction has not yet been mined.
+  //  index: Int
+
+  public AccountAdapter getFrom(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = environment.getContext();
+    UnsignedLong from = environment.getArgument("from");
+
+    return new AccountAdapter(
+        query
+            .getWorldState(from.longValue())
+            .get()
+            .get(transactionWithMetadata.getTransaction().getSender()));
+  }
+
+  public AccountAdapter getTo(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = environment.getContext();
+    UnsignedLong to = environment.getArgument("to");
+
+    return new AccountAdapter(
+        query
+            .getWorldState(to.longValue())
+            .get()
+            .get(transactionWithMetadata.getTransaction().getSender()));
+  }
+
+  public UInt256 getValue() {
+    return transactionWithMetadata.getTransaction().getValue().asUInt256();
+  }
+
+  public UInt256 getGasPrice() {
+    return transactionWithMetadata.getTransaction().getGasPrice().asUInt256();
+  }
+
+  public UnsignedLong getGas() {
+    return UnsignedLong.valueOf(transactionWithMetadata.getTransaction().getGasLimit());
+  }
+
+  public BytesValue getInputData() {
+    return transactionWithMetadata.getTransaction().getPayload();
+  }
+
+  public BlockAdapter getBlock(final DataFetchingEnvironment environment) {
+    long blockNumber = transactionWithMetadata.getBlockNumber();
+    BlockchainQuery query = environment.getContext();
+    return new BlockAdapter(query.blockByNumber(blockNumber).get());
+  }
+
+  // public UnsignedLong getStatus() {
+  //
+  // }
+  /*  # Status is the return status of the transaction. This will be 1 if the
+  # transaction succeeded, or 0 if it failed (due to a revert, or due to
+  # running out of gas). If the transaction has not yet been mined, this
+  # field will be null.
+  status: Long*/
+  /*
+  	public UnsignedLong getGasUsed(){
+  long blockNumber = transactionWithMetadata.getBlockNumber();
+  BlockchainQuery query = environment.getContext();
+  BlockWithMetadata block = (query.blockByNumber(blockNumber).get();
+  return UnsignedLong.valueOf(block.getHeader().getGasUsed());
+  	}
+  */
+  /*
+     # CumulativeGasUsed is the total gas used in the block up to and including
+     # this transaction. If the transaction has not yet been mined, this field
+     # will be null.
+  cumulativeGasUsed: Long
+
+  # CreatedContract is the account that was created by a contract creation
+     # transaction. If the transaction was not a contract creation transaction,
+     # or it has not yet been mined, this field will be null.
+     createdContract(block: Long): Account
+     # Logs is a list of log entries emitted by this transaction. If the
+     # transaction has not yet been mined, this field will be null.
+  logs: [Log!]
+  */
+}

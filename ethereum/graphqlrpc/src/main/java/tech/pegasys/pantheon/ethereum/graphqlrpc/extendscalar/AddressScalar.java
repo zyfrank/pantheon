@@ -12,7 +12,7 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.extendscalar;
 
-import java.util.Optional;
+import tech.pegasys.pantheon.ethereum.core.Address;
 
 import graphql.Internal;
 import graphql.language.StringValue;
@@ -28,52 +28,40 @@ public class AddressScalar extends GraphQLScalarType {
   public AddressScalar() {
     super(
         "Address",
-        "A Byte32 scalar",
-        new Coercing<String, String>() {
+        "Address scalar",
+        new Coercing<Object, Object>() {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
-            Optional<String> byte32;
-            if (input instanceof String) {
-              byte32 = Optional.of(String.valueOf(input));
-            } else {
-              byte32 = toByte32(input);
-            }
-            if (byte32.isPresent()) {
-              return byte32.get();
+            if (input instanceof Address) {
+              return ((Address) input).toString();
             }
             throw new CoercingSerializeException(
-                "Expected a 'Byte32' like object but was '" + input + "'.");
+                "Expected a 'Address' like object but was '" + input);
           }
 
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
-
-            if (input instanceof String) {
-              return String.valueOf(String.valueOf(input));
+            if (input instanceof Address) {
+              return ((Address) input).toString();
             }
-            Optional<String> url = toByte32(input);
-            if (!url.isPresent()) {
-              throw new CoercingParseValueException(
-                  "Expected a 'URL' like object but was '" + input + "'.");
-            }
-            return url.get();
+            throw new CoercingSerializeException(
+                "Expected a 'Address' like object but was '" + input);
           }
 
           @Override
-          public String parseLiteral(final Object input) throws CoercingParseLiteralException {
+          public Address parseLiteral(final Object input) throws CoercingParseLiteralException {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException(
-                  "Expected AST type 'StringValue' but was '" + input + "'.");
+                  "Expected AST type 'StringValue' but was '" + input);
             }
-            return ((StringValue) input).getValue();
+            Address result;
+            try {
+              result = Address.fromHexStringStrict(((StringValue) input).getValue());
+            } catch (IllegalArgumentException e) {
+              throw new CoercingSerializeException("Address parse error: " + e);
+            }
+            return result;
           }
         });
-  }
-
-  private static Optional<String> toByte32(final Object input) {
-    if (input instanceof String) {
-      return Optional.of((String) input);
-    }
-    return Optional.empty();
   }
 }

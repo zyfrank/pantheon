@@ -12,9 +12,19 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
+import tech.pegasys.pantheon.ethereum.blockcreation.MiningCoordinator;
 import tech.pegasys.pantheon.ethereum.core.Hash;
+import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcError;
+import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
+import tech.pegasys.pantheon.util.bytes.Bytes32;
+import tech.pegasys.pantheon.util.uint.UInt256;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
 
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetcher;
@@ -23,20 +33,49 @@ import graphql.schema.DataFetcher;
 // import org.apache.logging.log4j.Logger;
 
 public class GraphQLDataFetchers {
-  public GraphQLDataFetchers(final BlockchainQuery blockchain) {
+  public GraphQLDataFetchers(
+      final BlockchainQuery blockchain,
+      final MiningCoordinator miningCoordinator,
+      final Set<Capability> supportedCapabilities) {
     this.blockchain = blockchain;
+    this.miningCoordinator = miningCoordinator;
+
+    final OptionalInt version =
+        supportedCapabilities.stream()
+            .filter(cap -> EthProtocol.NAME.equals(cap.getName()))
+            .mapToInt(Capability::getVersion)
+            .max();
+    highestEthVersion = version.isPresent() ? version.getAsInt() : null;
   }
 
   // private static final Logger LOG = LogManager.getLogger();
 
   private BlockchainQuery blockchain;
+  private MiningCoordinator miningCoordinator;
+  private final Integer highestEthVersion;
 
-  public DataFetcher<BlockAdapter> getBlockParentDataFetcher() {
+  public DataFetcher<Integer> getProtocolVersionDataFetcher() {
     return dataFetchingEnvironment -> {
-      BlockAdapter block = dataFetchingEnvironment.getSource();
-      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> result =
-          blockchain.blockByHash(block.getParentHash());
-      return new BlockAdapter(result.get());
+      return highestEthVersion;
+    };
+  }
+
+  public DataFetcher<UInt256> getGasPriceDataFetcher() {
+    return dataFetchingEnvironment -> {
+      return miningCoordinator.getMinTransactionGasPrice().asUInt256();
+    };
+  }
+
+  public DataFetcher<List<BlockAdapter>> getRangeBlockDataFetcher() {
+
+    return dataFetchingEnvironment -> {
+      // UnsignedLong from = dataFetchingEnvironment.getArgument("from");
+      // UnsignedLong to = dataFetchingEnvironment.getArgument("to");
+      // to do add checking
+
+      List<BlockAdapter> results = new ArrayList<BlockAdapter>();
+
+      return results;
     };
   }
 
@@ -44,22 +83,30 @@ public class GraphQLDataFetchers {
 
     return dataFetchingEnvironment -> {
       UnsignedLong number = dataFetchingEnvironment.getArgument("number");
-      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> result;
+      Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
+      if ((number != null) && (hash != null)) {
+        throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+      }
 
+      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> result;
       if (number != null) {
         result = blockchain.blockByNumber(number.longValue());
       } else {
-
-        String hash = dataFetchingEnvironment.getArgument("hash");
-        if (hash != null) {
-          result = blockchain.blockByHash(Hash.fromHexString(hash));
-        } else {
-          result = blockchain.latestBlock();
-        }
+        result = blockchain.blockByHash(Hash.wrap(hash));
       }
-
+      if (result.get() == null) {
+        result = blockchain.latestBlock();
+      }
       BlockAdapter block = new BlockAdapter(result.get());
       return block;
+    };
+  }
+
+  public DataFetcher<TransactionAdapter> getTransactionDataFetcher() {
+    return dataFetchingEnvironment -> {
+      Hash hash = dataFetchingEnvironment.getArgument("hash");
+      Optional<TransactionWithMetadata> result = blockchain.transactionByHash(hash);
+      return new TransactionAdapter(result.get());
     };
   }
 }
