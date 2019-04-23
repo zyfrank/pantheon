@@ -22,6 +22,7 @@ import tech.pegasys.pantheon.ethereum.core.PrivacyParameters;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetchers;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLProvider;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLRpcConfiguration;
@@ -88,6 +89,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
+import graphql.GraphQL;
 import io.vertx.core.Vertx;
 
 public class RunnerBuilder {
@@ -365,11 +367,12 @@ public class RunnerBuilder {
 
     BlockchainQuery queries =
         new BlockchainQuery(context.getBlockchain(), context.getWorldStateArchive());
-    GraphQLDataFetchers fetchers =
-        new GraphQLDataFetchers(queries, miningCoordinator, supportedCapabilities);
-    GraphQLProvider provider = new GraphQLProvider(fetchers);
+    GraphQLDataFetchers fetchers = new GraphQLDataFetchers(supportedCapabilities);
+    GraphQLDataFetcherContext dataFetcherContext =
+        new GraphQLDataFetcherContext(queries, miningCoordinator);
+    GraphQL graphQL = null;
     try {
-      provider.init();
+      graphQL = GraphQLProvider.buildGraphQL(fetchers);
     } catch (IOException e) {
 
     }
@@ -379,9 +382,10 @@ public class RunnerBuilder {
                 vertx,
                 dataDir,
                 GraphQLRpcConfiguration.createDefault(),
-                provider,
-                queries,
+                graphQL,
+                dataFetcherContext,
                 metricsSystem));
+
     Optional<WebSocketService> webSocketService = Optional.empty();
     if (webSocketConfiguration.isEnabled()) {
       final Map<String, JsonRpcMethod> webSocketsJsonRpcMethods =

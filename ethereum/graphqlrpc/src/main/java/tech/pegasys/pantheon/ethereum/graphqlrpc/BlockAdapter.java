@@ -35,8 +35,12 @@ public class BlockAdapter {
     return blockWithMetaData.getHeader().getParentHash();
   }
   */
+  private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
+    return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
+  }
+
   public BlockAdapter getParent(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = environment.getContext();
+    BlockchainQuery query = getBlockchainQuery(environment);
     Hash parentHash = blockWithMetaData.getHeader().getParentHash();
     return new BlockAdapter(query.blockByHash(parentHash).get());
   }
@@ -106,7 +110,7 @@ public class BlockAdapter {
   }
 
   public List<BlockAdapter> getOmmers(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = environment.getContext();
+    BlockchainQuery query = getBlockchainQuery(environment);
     List<Hash> ommers = blockWithMetaData.getOmmers();
     List<BlockAdapter> results = new ArrayList<BlockAdapter>();
     for (Hash item : ommers) {
@@ -116,7 +120,7 @@ public class BlockAdapter {
   }
 
   public BlockAdapter getOmmerAt(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = environment.getContext();
+    BlockchainQuery query = getBlockchainQuery(environment);
     int index = environment.getArgument("index");
     List<Hash> ommers = blockWithMetaData.getOmmers();
     Hash result = ommers.get(index);

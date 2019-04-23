@@ -41,8 +41,12 @@ public class TransactionAdapter {
   //   # be null if the transaction has not yet been mined.
   //  index: Int
 
+  private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
+    return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
+  }
+
   public AccountAdapter getFrom(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = environment.getContext();
+    BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong from = environment.getArgument("from");
 
     return new AccountAdapter(
@@ -53,7 +57,7 @@ public class TransactionAdapter {
   }
 
   public AccountAdapter getTo(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = environment.getContext();
+    BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong to = environment.getArgument("to");
 
     return new AccountAdapter(
@@ -81,7 +85,7 @@ public class TransactionAdapter {
 
   public BlockAdapter getBlock(final DataFetchingEnvironment environment) {
     long blockNumber = transactionWithMetadata.getBlockNumber();
-    BlockchainQuery query = environment.getContext();
+    BlockchainQuery query = getBlockchainQuery(environment);
     return new BlockAdapter(query.blockByNumber(blockNumber).get());
   }
 
@@ -96,7 +100,7 @@ public class TransactionAdapter {
   /*
   	public UnsignedLong getGasUsed(){
   long blockNumber = transactionWithMetadata.getBlockNumber();
-  BlockchainQuery query = environment.getContext();
+      BlockchainQuery query = getBlockchainQuery(environment);
   BlockWithMetadata block = (query.blockByNumber(blockNumber).get();
   return UnsignedLong.valueOf(block.getHeader().getGasUsed());
   	}

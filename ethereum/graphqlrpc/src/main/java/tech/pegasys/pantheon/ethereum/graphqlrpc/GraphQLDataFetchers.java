@@ -29,17 +29,8 @@ import java.util.Set;
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetcher;
 
-// import org.apache.logging.log4j.LogManager;
-// import org.apache.logging.log4j.Logger;
-
 public class GraphQLDataFetchers {
-  public GraphQLDataFetchers(
-      final BlockchainQuery blockchain,
-      final MiningCoordinator miningCoordinator,
-      final Set<Capability> supportedCapabilities) {
-    this.blockchain = blockchain;
-    this.miningCoordinator = miningCoordinator;
-
+  public GraphQLDataFetchers(final Set<Capability> supportedCapabilities) {
     final OptionalInt version =
         supportedCapabilities.stream()
             .filter(cap -> EthProtocol.NAME.equals(cap.getName()))
@@ -48,10 +39,6 @@ public class GraphQLDataFetchers {
     highestEthVersion = version.isPresent() ? version.getAsInt() : null;
   }
 
-  // private static final Logger LOG = LogManager.getLogger();
-
-  private BlockchainQuery blockchain;
-  private MiningCoordinator miningCoordinator;
   private final Integer highestEthVersion;
 
   public DataFetcher<Integer> getProtocolVersionDataFetcher() {
@@ -62,6 +49,9 @@ public class GraphQLDataFetchers {
 
   public DataFetcher<UInt256> getGasPriceDataFetcher() {
     return dataFetchingEnvironment -> {
+      MiningCoordinator miningCoordinator =
+          ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getMiningCoordinator();
+
       return miningCoordinator.getMinTransactionGasPrice().asUInt256();
     };
   }
@@ -82,6 +72,8 @@ public class GraphQLDataFetchers {
   public DataFetcher<BlockAdapter> getBlockDataFetcher() {
 
     return dataFetchingEnvironment -> {
+      BlockchainQuery blockchain =
+          ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
       UnsignedLong number = dataFetchingEnvironment.getArgument("number");
       Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
       if ((number != null) && (hash != null)) {
@@ -104,6 +96,9 @@ public class GraphQLDataFetchers {
 
   public DataFetcher<TransactionAdapter> getTransactionDataFetcher() {
     return dataFetchingEnvironment -> {
+      BlockchainQuery blockchain =
+          ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
+
       Hash hash = dataFetchingEnvironment.getArgument("hash");
       Optional<TransactionWithMetadata> result = blockchain.transactionByHash(hash);
       return new TransactionAdapter(result.get());

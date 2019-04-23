@@ -33,33 +33,44 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 
 public class GraphQLProvider {
-  public GraphQLProvider(final GraphQLDataFetchers graphQLDataFetchers) {
-    this.graphQLDataFetchers = graphQLDataFetchers;
-  }
+  /*  public GraphQLProvider(final GraphQLDataFetchers graphQLDataFetchers) {
+      this.graphQLDataFetchers = graphQLDataFetchers;
+    }
+  */
 
-  private GraphQL graphQL;
+  private GraphQLProvider() {}
 
-  public void init() throws IOException {
+  public static GraphQL buildGraphQL(final GraphQLDataFetchers graphQLDataFetchers)
+      throws IOException {
     URL url = Resources.getResource("schema.graphqls");
     String sdl = Resources.toString(url, Charsets.UTF_8);
-    GraphQLSchema graphQLSchema = buildSchema(sdl);
-    this.graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+    GraphQLSchema graphQLSchema = buildSchema(sdl, graphQLDataFetchers);
+    return GraphQL.newGraphQL(graphQLSchema).build();
   }
+  /*private GraphQL graphQL;
 
-  public GraphQL graphQL() {
-    return graphQL;
-  }
+    public void init() throws IOException {
+      URL url = Resources.getResource("schema.graphqls");
+      String sdl = Resources.toString(url, Charsets.UTF_8);
+      GraphQLSchema graphQLSchema = buildSchema(sdl);
+      this.graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+    }
 
-  private GraphQLDataFetchers graphQLDataFetchers;
+    public GraphQL graphQL() {
+      return graphQL;
+    }
+  */
+  //  private GraphQLDataFetchers graphQLDataFetchers;
 
-  private GraphQLSchema buildSchema(final String sdl) {
+  private static GraphQLSchema buildSchema(
+      final String sdl, final GraphQLDataFetchers graphQLDataFetchers) {
     TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(sdl);
-    RuntimeWiring runtimeWiring = buildWiring();
+    RuntimeWiring runtimeWiring = buildWiring(graphQLDataFetchers);
     SchemaGenerator schemaGenerator = new SchemaGenerator();
     return schemaGenerator.makeExecutableSchema(typeRegistry, runtimeWiring);
   }
 
-  private RuntimeWiring buildWiring() {
+  private static RuntimeWiring buildWiring(final GraphQLDataFetchers graphQLDataFetchers) {
     return RuntimeWiring.newRuntimeWiring()
         .scalar(new AddressScalar())
         .scalar(new Bytes32Scalar())

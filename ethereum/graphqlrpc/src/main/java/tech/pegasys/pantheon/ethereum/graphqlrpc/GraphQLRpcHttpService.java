@@ -37,6 +37,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.GraphQL;
 import graphql.GraphQLError;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
@@ -70,10 +71,10 @@ public class GraphQLRpcHttpService {
 
   private HttpServer httpServer;
 
-  private GraphQLProvider graphQlProvider;
+  private GraphQL graphQL;
 
-  // as GraphQL context data
-  private BlockchainQuery blockchain;
+  // as GraphQL dataFetcher context data
+  private GraphQLDataFetcherContext dataFetcherContext;
   /**
    * Construct a GraphQLRpcHttpService handler
    *
@@ -87,16 +88,16 @@ public class GraphQLRpcHttpService {
       final Vertx vertx,
       final Path dataDir,
       final GraphQLRpcConfiguration config,
-      final GraphQLProvider graphQlProvider,
-      final BlockchainQuery blockchain,
+      final GraphQL graphQL,
+      final GraphQLDataFetcherContext dataFetcherContext,
       final MetricsSystem metricsSystem) {
     this.dataDir = dataDir;
 
     validateConfig(config);
     this.config = config;
     this.vertx = vertx;
-    this.graphQlProvider = graphQlProvider;
-    this.blockchain = blockchain;
+    this.graphQL = graphQL;
+    this.dataFetcherContext = dataFetcherContext;
   }
 
   private void validateConfig(final GraphQLRpcConfiguration config) {
@@ -299,8 +300,8 @@ public class GraphQLRpcHttpService {
   */
   private GraphQLRpcResponse process(final String requestJson) {
     ExecutionInput executionInput =
-        ExecutionInput.newExecutionInput().query(requestJson).context(blockchain).build();
-    ExecutionResult result = graphQlProvider.graphQL().execute(executionInput);
+        ExecutionInput.newExecutionInput().query(requestJson).context(dataFetcherContext).build();
+    ExecutionResult result = graphQL.execute(executionInput);
     List<GraphQLError> errors = result.getErrors();
     return new GraphQLRpcSuccessResponse(errors, result);
     /*   if ((errors == null) || (errors.size() == 0)) {
