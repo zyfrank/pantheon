@@ -12,7 +12,9 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal;
 
+import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
+import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.util.bytes.Bytes32;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
@@ -20,6 +22,7 @@ import tech.pegasys.pantheon.util.uint.UInt256;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedLong;
@@ -31,11 +34,7 @@ public class BlockAdapter {
   }
 
   private final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData;
-  /*
-  public Hash getParentHash() {
-    return blockWithMetaData.getHeader().getParentHash();
-  }
-  */
+
   private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
     return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
   }
@@ -72,8 +71,17 @@ public class BlockAdapter {
     return blockWithMetaData.getHeader().getReceiptsRoot();
   }
 
-  // miner(block: Long): Account!
-  //	# ExtraData is an arbitrary data field supplied by the miner.
+  public AccountAdapter getMiner(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = getBlockchainQuery(environment);
+    UnsignedLong blockNo = environment.getArgument("block");
+
+    return new AccountAdapter(
+        query
+            .getWorldState(blockNo.longValue())
+            .get()
+            .get(blockWithMetaData.getHeader().getCoinbase()));
+  }
+
   public BytesValue getExtraData() {
     return blockWithMetaData.getHeader().getExtraData();
   }
@@ -134,18 +142,51 @@ public class BlockAdapter {
   public Bytes32 getOmmerHash() {
     return blockWithMetaData.getHeader().getOmmersHash();
   }
+
+  public List<TransactionAdapter> getTransactions() {
+    List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
+    List<TransactionAdapter> results = new ArrayList<TransactionAdapter>();
+    for (TransactionWithMetadata tran : trans) {
+      results.add(new TransactionAdapter(tran));
+    }
+    ;
+    return results;
+  }
+
+  public TransactionAdapter getTransactionAt(final DataFetchingEnvironment environment) {
+    int index = environment.getArgument("index");
+    List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
+    TransactionWithMetadata tran = trans.get(index);
+    if (tran != null) {
+      return new TransactionAdapter(tran);
+    }
+    return null;
+  }
+
+  public AccountAdapter getAccount(final DataFetchingEnvironment environment) {
+
+    BlockchainQuery query = getBlockchainQuery(environment);
+    long bn = blockWithMetaData.getHeader().getNumber();
+    Optional<MutableWorldState> ws = query.getWorldState(bn);
+
+    if (ws.get() != null) {
+
+      Address addr = environment.getArgument("address");
+
+      return new AccountAdapter(ws.get().get(addr));
+    }
+    return null;
+  }
+
+  public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
+    /*   Map<String, Object> filters = environment.getArgument("filter");
+    List<Address> addrs = filters.get("addresses");
+    List<List<Bytes32>>   topics = filters.get("topics");*/
+    return null;
+  }
   /*
-  # Transactions is a list of transactions associated with this block. If
-  # transactions are unavailable for this block, this field will be null.
-  transactions: [Transaction!]
-  # TransactionAt returns the transaction at the specified index. If
-  # transactions are unavailable for this block, or if the index is out of
-  # bounds, this field will be null.
-  transactionAt(index: Int!): Transaction
-  # Logs returns a filtered set of logs from this block.
-  logs(filter: BlockFilterCriteria!): [Log!]!
-  # Account fetches an Ethereum account at the current block's state.
-  account(address: Address!): Account!
+
+
   # Call executes a local call operation at the current block's state.
   call(data: CallData!): CallResult
   # EstimateGas estimates the amount of gas that will be required for

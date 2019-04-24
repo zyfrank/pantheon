@@ -13,9 +13,12 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal;
 
 import tech.pegasys.pantheon.ethereum.core.Hash;
+import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
+
+import java.util.Optional;
 
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
@@ -50,11 +53,18 @@ public class TransactionAdapter {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong from = environment.getArgument("from");
 
+    Optional<MutableWorldState> ws = query.getWorldState(from.longValue());
+    if (ws.get() != null) {
+      return new AccountAdapter(ws.get().get(transactionWithMetadata.getTransaction().getSender()));
+    }
+    return null;
+    /*
     return new AccountAdapter(
         query
             .getWorldState(from.longValue())
             .get()
             .get(transactionWithMetadata.getTransaction().getSender()));
+            */
   }
 
   public AccountAdapter getTo(final DataFetchingEnvironment environment) {
@@ -120,4 +130,7 @@ public class TransactionAdapter {
      # transaction has not yet been mined, this field will be null.
   logs: [Log!]
   */
+  // public List<LogAdapter> getLogs(){
+
+  // }
 }
