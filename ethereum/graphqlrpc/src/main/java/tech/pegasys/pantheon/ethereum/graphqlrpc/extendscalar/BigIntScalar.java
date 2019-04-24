@@ -35,8 +35,7 @@ public class BigIntScalar extends GraphQLScalarType {
             if (input instanceof UInt256) {
               return ((UInt256) input).toString();
             }
-            throw new CoercingSerializeException(
-                "Expected a 'BigInt' like object but was '" + input);
+            throw new CoercingSerializeException("Unable to serialize " + input + " as an BigInt");
           }
 
           @Override
@@ -44,21 +43,22 @@ public class BigIntScalar extends GraphQLScalarType {
             if (input instanceof UInt256) {
               return ((UInt256) input).toString();
             }
-            throw new CoercingSerializeException(
-                "Expected a 'BigInt' like object but was '" + input);
+            throw new CoercingParseValueException(
+                "Unable to parse variable value " + input + " as an BigInt");
           }
 
           @Override
           public UInt256 parseLiteral(final Object input) throws CoercingParseLiteralException {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException(
-                  "Expected AST type 'StringValue' but was '" + input);
+                  "Value is not any BigInt : '" + String.valueOf(input) + "'");
             }
             UInt256 result;
             try {
               result = UInt256.fromHexString(((StringValue) input).getValue());
             } catch (IllegalArgumentException e) {
-              throw new CoercingSerializeException("BigInt parse error: " + e);
+              throw new CoercingParseLiteralException(
+                  "Value is not any BigInt : '" + String.valueOf(input) + "'");
             }
             return result;
           }

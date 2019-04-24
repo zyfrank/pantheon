@@ -35,8 +35,7 @@ public class AddressScalar extends GraphQLScalarType {
             if (input instanceof Address) {
               return ((Address) input).toString();
             }
-            throw new CoercingSerializeException(
-                "Expected a 'Address' like object but was '" + input);
+            throw new CoercingSerializeException("Unable to serialize " + input + " as an Address");
           }
 
           @Override
@@ -44,21 +43,22 @@ public class AddressScalar extends GraphQLScalarType {
             if (input instanceof Address) {
               return ((Address) input).toString();
             }
-            throw new CoercingSerializeException(
-                "Expected a 'Address' like object but was '" + input);
+            throw new CoercingParseValueException(
+                "Unable to parse variable value " + input + " as an Address");
           }
 
           @Override
           public Address parseLiteral(final Object input) throws CoercingParseLiteralException {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException(
-                  "Expected AST type 'StringValue' but was '" + input);
+                  "Value is not any Address : '" + String.valueOf(input) + "'");
             }
             Address result;
             try {
               result = Address.fromHexStringStrict(((StringValue) input).getValue());
             } catch (IllegalArgumentException e) {
-              throw new CoercingSerializeException("Address parse error: " + e);
+              throw new CoercingParseLiteralException(
+                  "Value is not any Address : '" + String.valueOf(input) + "'");
             }
             return result;
           }

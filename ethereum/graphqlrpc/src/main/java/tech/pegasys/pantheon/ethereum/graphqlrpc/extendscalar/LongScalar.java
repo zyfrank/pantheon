@@ -20,12 +20,9 @@ import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 @Internal
 public class LongScalar extends GraphQLScalarType {
-  private static final Logger LOG = LogManager.getLogger();
 
   public LongScalar() {
     super(
@@ -34,40 +31,35 @@ public class LongScalar extends GraphQLScalarType {
         new Coercing<Object, Object>() {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
-            // todo add range checking
-            LOG.info("serialize called:" + input);
             if (input instanceof UnsignedLong) {
               return "0x" + ((UnsignedLong) input).toString(16);
             }
-            throw new CoercingParseLiteralException("Cannot serialize: " + input);
+            throw new CoercingSerializeException("Unable to serialize " + input + " as an Long");
           }
 
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
-            LOG.info("serialize called:" + input);
             if (input instanceof UnsignedLong) {
               return "0x" + ((UnsignedLong) input).toString(16);
             }
-            throw new CoercingParseLiteralException("Cannot serialize: " + input);
+            throw new CoercingParseValueException(
+                "Unable to parse variable value " + input + " as an Long");
           }
 
           @Override
           public Object parseLiteral(final Object input) throws CoercingParseLiteralException {
-            LOG.info("parseLiteral called:" + input);
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException(
-                  "Expected AST type 'StringValue' but was '" + input + "'.");
+                  "Value is not any Long : '" + String.valueOf(input) + "'");
             }
             UnsignedLong result;
             try {
               String inputString = ((StringValue) input).getValue();
-              LOG.info("parseLiteral called inputString: " + inputString.replaceAll("0x", ""));
               result = UnsignedLong.valueOf(inputString.replaceAll("0x", ""), 16);
-
             } catch (NumberFormatException e) {
-              throw new CoercingParseLiteralException("Cannot parse Long : '" + e + "'");
+              throw new CoercingParseLiteralException(
+                  "Value is not any Long : '" + String.valueOf(input) + "'");
             }
-            LOG.info("parseLiteral called result:" + result);
             return result;
           }
         });
