@@ -14,16 +14,13 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal;
 
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
-
-import java.util.Optional;
 
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
-public class TransactionAdapter {
+public class TransactionAdapter extends AdapterBase {
   private TransactionWithMetadata transactionWithMetadata;
 
   public TransactionAdapter(final TransactionWithMetadata transactionWithMetadata) {
@@ -44,38 +41,31 @@ public class TransactionAdapter {
   //  # Index is the index of this transaction in the parent block. This will
   //   # be null if the transaction has not yet been mined.
   //  index: Int
-
-  private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
-    return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
-  }
-
+  /*
+    private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
+      return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
+    }
+  */
   public AccountAdapter getFrom(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong from = environment.getArgument("from");
 
-    Optional<MutableWorldState> ws = query.getWorldState(from.longValue());
-    if (ws.get() != null) {
-      return new AccountAdapter(ws.get().get(transactionWithMetadata.getTransaction().getSender()));
+    MutableWorldState ws = query.getWorldState(from.longValue()).get();
+    if (ws != null) {
+      return new AccountAdapter(ws.get(transactionWithMetadata.getTransaction().getSender()));
     }
     return null;
-    /*
-    return new AccountAdapter(
-        query
-            .getWorldState(from.longValue())
-            .get()
-            .get(transactionWithMetadata.getTransaction().getSender()));
-            */
   }
 
   public AccountAdapter getTo(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong to = environment.getArgument("to");
 
-    return new AccountAdapter(
-        query
-            .getWorldState(to.longValue())
-            .get()
-            .get(transactionWithMetadata.getTransaction().getSender()));
+    MutableWorldState ws = query.getWorldState(to.longValue()).get();
+    if (ws != null) {
+      return new AccountAdapter(ws.get(transactionWithMetadata.getTransaction().getSender()));
+    }
+    return null;
   }
 
   public UInt256 getValue() {
@@ -97,7 +87,11 @@ public class TransactionAdapter {
   public BlockAdapter getBlock(final DataFetchingEnvironment environment) {
     long blockNumber = transactionWithMetadata.getBlockNumber();
     BlockchainQuery query = getBlockchainQuery(environment);
-    return new BlockAdapter(query.blockByNumber(blockNumber).get());
+    BlockWithMetadata<TransactionWithMetadata, Hash> block = query.blockByNumber(blockNumber).get();
+    if (block != null) {
+      return new BlockAdapter(block);
+    }
+    return null;
   }
 
   // public UnsignedLong getStatus() {

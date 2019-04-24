@@ -18,7 +18,7 @@ public interface GraphQLRpcResponse {
 
   @JsonGetter("graphqlrpc")
   default String getVersion() {
-    return "2.0";
+    return "1.0";
   }
 
   GraphQLRpcResponseType getType();

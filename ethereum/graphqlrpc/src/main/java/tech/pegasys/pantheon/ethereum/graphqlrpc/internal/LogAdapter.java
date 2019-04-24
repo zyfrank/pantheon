@@ -20,7 +20,6 @@ import tech.pegasys.pantheon.util.bytes.BytesValue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
@@ -55,9 +54,9 @@ public class LogAdapter extends AdapterBase {
   public TransactionAdapter getTransaction(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     Hash hash = logWithMetadata.getTransactionHash();
-    Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
-    if (tran.get() != null) {
-      return new TransactionAdapter(tran.get());
+    TransactionWithMetadata tran = query.transactionByHash(hash).get();
+    if (tran != null) {
+      return new TransactionAdapter(tran);
     }
     return null;
   }
@@ -65,12 +64,12 @@ public class LogAdapter extends AdapterBase {
   public AccountAdapter getAccount(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong blockNumber = environment.getArgument("block");
-    Optional<MutableWorldState> ws = query.getWorldState(blockNumber.longValue());
-    if (ws.get() != null) {
+    MutableWorldState ws = query.getWorldState(blockNumber.longValue()).get();
+    if (ws != null) {
       Hash hash = logWithMetadata.getTransactionHash();
-      Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
-      if (tran.get() != null) {
-        return new AccountAdapter(ws.get().get(tran.get().getTransaction().getSender()));
+      TransactionWithMetadata tran = query.transactionByHash(hash).get();
+      if (tran != null) {
+        return new AccountAdapter(ws.get(tran.getTransaction().getSender()));
       }
     }
     return null;

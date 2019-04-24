@@ -15,34 +15,36 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal;
 import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.util.bytes.Bytes32;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
-public class BlockAdapter {
+public class BlockAdapter extends AdapterBase {
   public BlockAdapter(final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData) {
     this.blockWithMetaData = blockWithMetaData;
   }
 
   private final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData;
-
-  private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
-    return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
-  }
-
+  /*
+    private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
+      return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
+    }
+  */
   public BlockAdapter getParent(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     Hash parentHash = blockWithMetaData.getHeader().getParentHash();
-    return new BlockAdapter(query.blockByHash(parentHash).get());
+    BlockWithMetadata<TransactionWithMetadata, Hash> block = query.blockByHash(parentHash).get();
+    if (block != null) {
+      return new BlockAdapter(block);
+    }
+    return null;
   }
 
   public Bytes32 getHash() {
@@ -123,18 +125,27 @@ public class BlockAdapter {
     List<Hash> ommers = blockWithMetaData.getOmmers();
     List<BlockAdapter> results = new ArrayList<BlockAdapter>();
     for (Hash item : ommers) {
-      results.add(new BlockAdapter(query.blockByHash(item).get()));
+      BlockWithMetadata<TransactionWithMetadata, Hash> block = query.blockByHash(item).get();
+      if (block != null) {
+        results.add(new BlockAdapter(block));
+      }
     }
-    return results;
+    if (results.size() > 0) {
+      return results;
+    }
+    return null;
   }
 
   public BlockAdapter getOmmerAt(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     int index = environment.getArgument("index");
     List<Hash> ommers = blockWithMetaData.getOmmers();
-    Hash result = ommers.get(index);
-    if (result != null) {
-      return new BlockAdapter(query.blockByHash(result).get());
+    Hash ommer = ommers.get(index);
+    if (ommer != null) {
+      BlockWithMetadata<TransactionWithMetadata, Hash> block = query.blockByHash(ommer).get();
+      if (block != null) {
+        return new BlockAdapter(block);
+      }
     }
     return null;
   }
@@ -149,8 +160,10 @@ public class BlockAdapter {
     for (TransactionWithMetadata tran : trans) {
       results.add(new TransactionAdapter(tran));
     }
-    ;
-    return results;
+    if (results.size() > 0) {
+      return results;
+    }
+    return null;
   }
 
   public TransactionAdapter getTransactionAt(final DataFetchingEnvironment environment) {
@@ -167,13 +180,11 @@ public class BlockAdapter {
 
     BlockchainQuery query = getBlockchainQuery(environment);
     long bn = blockWithMetaData.getHeader().getNumber();
-    Optional<MutableWorldState> ws = query.getWorldState(bn);
+    MutableWorldState ws = query.getWorldState(bn).get();
 
-    if (ws.get() != null) {
-
+    if (ws != null) {
       Address addr = environment.getArgument("address");
-
-      return new AccountAdapter(ws.get().get(addr));
+      return new AccountAdapter(ws.get(addr));
     }
     return null;
   }

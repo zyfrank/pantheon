@@ -17,30 +17,30 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.base.Objects;
 
-@JsonPropertyOrder({"graphqlrpc", "id", "result"})
+@JsonPropertyOrder({"graphqlrpc", "errors", "data"})
 public class GraphQLRpcSuccessResponse implements GraphQLRpcResponse {
 
-  private final Object id;
-  private final Object result;
+  private final Object errors;
+  private final Object data;
 
-  public GraphQLRpcSuccessResponse(final Object id, final Object result) {
-    this.id = id;
-    this.result = result;
+  public GraphQLRpcSuccessResponse(final Object errors, final Object data) {
+    this.errors = errors;
+    this.data = data;
   }
 
-  public GraphQLRpcSuccessResponse(final Object id) {
-    this.id = id;
-    this.result = "Success";
+  public GraphQLRpcSuccessResponse(final Object data) {
+    this.data = data;
+    errors = null;
   }
 
-  @JsonGetter("id")
-  public Object getId() {
-    return id;
+  @JsonGetter("errors")
+  public Object getErrors() {
+    return errors;
   }
 
-  @JsonGetter("result")
-  public Object getResult() {
-    return result;
+  @JsonGetter("data")
+  public Object getData() {
+    return data;
   }
 
   @Override
@@ -58,11 +58,11 @@ public class GraphQLRpcSuccessResponse implements GraphQLRpcResponse {
       return false;
     }
     final GraphQLRpcSuccessResponse that = (GraphQLRpcSuccessResponse) o;
-    return Objects.equal(id, that.id) && Objects.equal(result, that.result);
+    return Objects.equal(errors, that.errors) && Objects.equal(data, that.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(id, result);
+    return Objects.hashCode(errors, data);
   }
 }

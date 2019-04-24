@@ -158,7 +158,7 @@ public class GraphQLRpcHttpService {
                 resultFuture.completeExceptionally(
                     new GraphQLRpcServiceException(
                         String.format(
-                            "Failed to bind Ethereum JSON RPC listener to %s:%s: %s",
+                            "Failed to bind Ethereum GraphQL RPC listener to %s:%s: %s",
                             config.getHost(), config.getPort(), cause.getMessage())));
                 return;
               }
@@ -254,8 +254,8 @@ public class GraphQLRpcHttpService {
     final HttpServerResponse response = routingContext.response();
     vertx.executeBlocking(
         future -> {
-          final GraphQLRpcResponse jsonRpcResponse = process(request);
-          future.complete(jsonRpcResponse);
+          final GraphQLRpcResponse graphQLRpcResponse = process(request);
+          future.complete(graphQLRpcResponse);
         },
         false,
         (res) -> {
@@ -264,10 +264,10 @@ public class GraphQLRpcHttpService {
             return;
           }
 
-          final GraphQLRpcResponse jsonRpcResponse = (GraphQLRpcResponse) res.result();
-          response.setStatusCode(status(jsonRpcResponse).code());
+          final GraphQLRpcResponse graphQLRpcResponse = (GraphQLRpcResponse) res.result();
+          response.setStatusCode(status(graphQLRpcResponse).code());
           response.putHeader("Content-Type", APPLICATION_JSON);
-          response.end(serialise(jsonRpcResponse));
+          response.end(serialise(graphQLRpcResponse));
         });
   }
 

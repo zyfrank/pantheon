@@ -21,7 +21,7 @@ import tech.pegasys.pantheon.util.uint.UInt256;
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
-public class AccountAdapter {
+public class AccountAdapter extends AdapterBase {
   private Account account;
 
   public AccountAdapter(final Account account) {
