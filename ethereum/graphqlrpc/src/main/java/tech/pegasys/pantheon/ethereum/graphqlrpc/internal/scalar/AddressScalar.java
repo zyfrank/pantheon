@@ -10,9 +10,9 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.extendscalar;
+package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 
-import tech.pegasys.pantheon.util.uint.UInt256;
+import tech.pegasys.pantheon.ethereum.core.Address;
 
 import graphql.Internal;
 import graphql.language.StringValue;
@@ -23,42 +23,42 @@ import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
 
 @Internal
-public class BigIntScalar extends GraphQLScalarType {
+public class AddressScalar extends GraphQLScalarType {
 
-  public BigIntScalar() {
+  public AddressScalar() {
     super(
-        "BigInt",
-        "A BigInt scalar",
+        "Address",
+        "Address scalar",
         new Coercing<Object, Object>() {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
-            if (input instanceof UInt256) {
-              return ((UInt256) input).toString();
+            if (input instanceof Address) {
+              return ((Address) input).toString();
             }
-            throw new CoercingSerializeException("Unable to serialize " + input + " as an BigInt");
+            throw new CoercingSerializeException("Unable to serialize " + input + " as an Address");
           }
 
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
-            if (input instanceof UInt256) {
-              return ((UInt256) input).toString();
+            if (input instanceof Address) {
+              return ((Address) input).toString();
             }
             throw new CoercingParseValueException(
-                "Unable to parse variable value " + input + " as an BigInt");
+                "Unable to parse variable value " + input + " as an Address");
           }
 
           @Override
-          public UInt256 parseLiteral(final Object input) throws CoercingParseLiteralException {
+          public Address parseLiteral(final Object input) throws CoercingParseLiteralException {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException(
-                  "Value is not any BigInt : '" + String.valueOf(input) + "'");
+                  "Value is not any Address : '" + String.valueOf(input) + "'");
             }
-            UInt256 result;
+            Address result;
             try {
-              result = UInt256.fromHexString(((StringValue) input).getValue());
+              result = Address.fromHexStringStrict(((StringValue) input).getValue());
             } catch (IllegalArgumentException e) {
               throw new CoercingParseLiteralException(
-                  "Value is not any BigInt : '" + String.valueOf(input) + "'");
+                  "Value is not any Address : '" + String.valueOf(input) + "'");
             }
             return result;
           }

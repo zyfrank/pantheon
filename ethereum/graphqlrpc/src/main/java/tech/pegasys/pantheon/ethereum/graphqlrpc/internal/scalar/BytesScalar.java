@@ -10,9 +10,10 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.extendscalar;
+package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.pantheon.util.bytes.BytesValue;
+
 import graphql.Internal;
 import graphql.language.StringValue;
 import graphql.schema.Coercing;
@@ -22,43 +23,42 @@ import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
 
 @Internal
-public class LongScalar extends GraphQLScalarType {
+public class BytesScalar extends GraphQLScalarType {
 
-  public LongScalar() {
+  public BytesScalar() {
     super(
-        "Long",
-        "Long is a 64 bit unsigned integer",
+        "Bytes",
+        "A Byte32 scalar",
         new Coercing<Object, Object>() {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
-            if (input instanceof UnsignedLong) {
-              return "0x" + ((UnsignedLong) input).toString(16);
+            if (input instanceof BytesValue) {
+              return ((BytesValue) input).toString();
             }
-            throw new CoercingSerializeException("Unable to serialize " + input + " as an Long");
+            throw new CoercingSerializeException("Unable to serialize " + input + " as an Bytes");
           }
 
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
-            if (input instanceof UnsignedLong) {
-              return "0x" + ((UnsignedLong) input).toString(16);
+            if (input instanceof BytesValue) {
+              return ((BytesValue) input).toString();
             }
             throw new CoercingParseValueException(
-                "Unable to parse variable value " + input + " as an Long");
+                "Unable to parse variable value " + input + " as an Bytes");
           }
 
           @Override
-          public Object parseLiteral(final Object input) throws CoercingParseLiteralException {
+          public BytesValue parseLiteral(final Object input) throws CoercingParseLiteralException {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException(
-                  "Value is not any Long : '" + String.valueOf(input) + "'");
+                  "Value is not any Bytes : '" + String.valueOf(input) + "'");
             }
-            UnsignedLong result;
+            BytesValue result;
             try {
-              String inputString = ((StringValue) input).getValue();
-              result = UnsignedLong.valueOf(inputString.replaceAll("0x", ""), 16);
-            } catch (NumberFormatException e) {
+              result = BytesValue.fromHexString(((StringValue) input).getValue());
+            } catch (IllegalArgumentException e) {
               throw new CoercingParseLiteralException(
-                  "Value is not any Long : '" + String.valueOf(input) + "'");
+                  "Value is not any Bytes : '" + String.valueOf(input) + "'");
             }
             return result;
           }

@@ -10,10 +10,9 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package tech.pegasys.pantheon.ethereum.graphqlrpc.extendscalar;
+package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 
-import tech.pegasys.pantheon.ethereum.core.Address;
-
+import com.google.common.primitives.UnsignedLong;
 import graphql.Internal;
 import graphql.language.StringValue;
 import graphql.schema.Coercing;
@@ -23,42 +22,43 @@ import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
 
 @Internal
-public class AddressScalar extends GraphQLScalarType {
+public class LongScalar extends GraphQLScalarType {
 
-  public AddressScalar() {
+  public LongScalar() {
     super(
-        "Address",
-        "Address scalar",
+        "Long",
+        "Long is a 64 bit unsigned integer",
         new Coercing<Object, Object>() {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
-            if (input instanceof Address) {
-              return ((Address) input).toString();
+            if (input instanceof UnsignedLong) {
+              return "0x" + ((UnsignedLong) input).toString(16);
             }
-            throw new CoercingSerializeException("Unable to serialize " + input + " as an Address");
+            throw new CoercingSerializeException("Unable to serialize " + input + " as an Long");
           }
 
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
-            if (input instanceof Address) {
-              return ((Address) input).toString();
+            if (input instanceof UnsignedLong) {
+              return "0x" + ((UnsignedLong) input).toString(16);
             }
             throw new CoercingParseValueException(
-                "Unable to parse variable value " + input + " as an Address");
+                "Unable to parse variable value " + input + " as an Long");
           }
 
           @Override
-          public Address parseLiteral(final Object input) throws CoercingParseLiteralException {
+          public Object parseLiteral(final Object input) throws CoercingParseLiteralException {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException(
-                  "Value is not any Address : '" + String.valueOf(input) + "'");
+                  "Value is not any Long : '" + String.valueOf(input) + "'");
             }
-            Address result;
+            UnsignedLong result;
             try {
-              result = Address.fromHexStringStrict(((StringValue) input).getValue());
-            } catch (IllegalArgumentException e) {
+              String inputString = ((StringValue) input).getValue();
+              result = UnsignedLong.valueOf(inputString.replaceAll("0x", ""), 16);
+            } catch (NumberFormatException e) {
               throw new CoercingParseLiteralException(
-                  "Value is not any Address : '" + String.valueOf(input) + "'");
+                  "Value is not any Long : '" + String.valueOf(input) + "'");
             }
             return result;
           }

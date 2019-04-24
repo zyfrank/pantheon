@@ -14,11 +14,11 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
-import tech.pegasys.pantheon.ethereum.graphqlrpc.extendscalar.AddressScalar;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.extendscalar.BigIntScalar;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.extendscalar.Bytes32Scalar;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.extendscalar.BytesScalar;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.extendscalar.LongScalar;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar.AddressScalar;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar.BigIntScalar;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar.Bytes32Scalar;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar.BytesScalar;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar.LongScalar;
 
 import java.io.IOException;
 import java.net.URL;
@@ -33,10 +33,6 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 
 public class GraphQLProvider {
-  /*  public GraphQLProvider(final GraphQLDataFetchers graphQLDataFetchers) {
-      this.graphQLDataFetchers = graphQLDataFetchers;
-    }
-  */
 
   private GraphQLProvider() {}
 
@@ -47,20 +43,6 @@ public class GraphQLProvider {
     GraphQLSchema graphQLSchema = buildSchema(sdl, graphQLDataFetchers);
     return GraphQL.newGraphQL(graphQLSchema).build();
   }
-  /*private GraphQL graphQL;
-
-    public void init() throws IOException {
-      URL url = Resources.getResource("schema.graphqls");
-      String sdl = Resources.toString(url, Charsets.UTF_8);
-      GraphQLSchema graphQLSchema = buildSchema(sdl);
-      this.graphQL = GraphQL.newGraphQL(graphQLSchema).build();
-    }
-
-    public GraphQL graphQL() {
-      return graphQL;
-    }
-  */
-  //  private GraphQLDataFetchers graphQLDataFetchers;
 
   private static GraphQLSchema buildSchema(
       final String sdl, final GraphQLDataFetchers graphQLDataFetchers) {
@@ -85,9 +67,6 @@ public class GraphQLProvider {
                 .dataFetcher("gasPrice", graphQLDataFetchers.getGasPriceDataFetcher())
                 .dataFetcher(
                     "protocolVersion", graphQLDataFetchers.getProtocolVersionDataFetcher()))
-        /*.type(
-        newTypeWiring("Block")
-            .dataFetcher("parent", graphQLDataFetchers.getBlockParentDataFetcher()))*/
         .build();
   }
 }

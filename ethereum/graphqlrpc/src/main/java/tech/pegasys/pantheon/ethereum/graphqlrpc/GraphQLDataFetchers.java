@@ -15,11 +15,11 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc;
 import tech.pegasys.pantheon.ethereum.blockcreation.MiningCoordinator;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.BlockAdapter;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.TransactionAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcError;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
 import tech.pegasys.pantheon.util.bytes.Bytes32;
@@ -27,7 +27,6 @@ import tech.pegasys.pantheon.util.uint.UInt256;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -64,12 +63,25 @@ public class GraphQLDataFetchers {
   public DataFetcher<List<BlockAdapter>> getRangeBlockDataFetcher() {
 
     return dataFetchingEnvironment -> {
-      // UnsignedLong from = dataFetchingEnvironment.getArgument("from");
-      // UnsignedLong to = dataFetchingEnvironment.getArgument("to");
-      // to do add checking
+      long from = ((UnsignedLong) dataFetchingEnvironment.getArgument("from")).longValue();
+      long to = ((UnsignedLong) dataFetchingEnvironment.getArgument("to")).longValue();
+      if (from < to) {
+        throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+      }
+
+      BlockchainQuery blockchain =
+          ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
 
       List<BlockAdapter> results = new ArrayList<BlockAdapter>();
-
+      for (long i = from; i <= to; i++) {
+        BlockWithMetadata<TransactionWithMetadata, Hash> block = blockchain.blockByNumber(i).get();
+        if (block != null) {
+          results.add(new BlockAdapter(block));
+        }
+      }
+      if (results.size() == 0) {
+        return null;
+      }
       return results;
     };
   }
@@ -85,17 +97,19 @@ public class GraphQLDataFetchers {
         throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
       }
 
-      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> result;
+      BlockWithMetadata<TransactionWithMetadata, Hash> result = null;
       if (number != null) {
-        result = blockchain.blockByNumber(number.longValue());
+        result = blockchain.blockByNumber(number.longValue()).get();
       } else {
-        result = blockchain.blockByHash(Hash.wrap(hash));
+        result = blockchain.blockByHash(Hash.wrap(hash)).get();
       }
-      if (result.get() == null) {
-        result = blockchain.latestBlock();
+      if (result == null) {
+        result = blockchain.latestBlock().get();
       }
-      BlockAdapter block = new BlockAdapter(result.get());
-      return block;
+      if (result != null) {
+        return new BlockAdapter(result);
+      }
+      return null;
     };
   }
 
@@ -103,10 +117,12 @@ public class GraphQLDataFetchers {
     return dataFetchingEnvironment -> {
       BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
-
       Hash hash = dataFetchingEnvironment.getArgument("hash");
-      Optional<TransactionWithMetadata> result = blockchain.transactionByHash(hash);
-      return new TransactionAdapter(result.get());
+      TransactionWithMetadata result = blockchain.transactionByHash(hash).get();
+      if (result != null) {
+        return new TransactionAdapter(result);
+      }
+      return null;
     };
   }
 }
