@@ -303,7 +303,7 @@ public class GraphQLRpcHttpService {
         ExecutionInput.newExecutionInput().query(requestJson).context(dataFetcherContext).build();
     ExecutionResult result = graphQL.execute(executionInput);
     List<GraphQLError> errors = result.getErrors();
-    return new GraphQLRpcSuccessResponse(errors, result);
+    return new GraphQLRpcSuccessResponse(errors, result.getData());
     /*   if ((errors == null) || (errors.size() == 0)) {
       return new GraphQLRpcSuccessResponse(null, result.getData());
     } else {

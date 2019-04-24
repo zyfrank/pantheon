@@ -23,6 +23,7 @@ import tech.pegasys.pantheon.util.bytes.BytesValue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
@@ -34,8 +35,8 @@ public class LogAdapter extends AdapterBase {
     this.logWithMetadata = logWithMetadata;
   }
 
-  public Integer getIndex() {
-    return logWithMetadata.getLogIndex();
+  public Optional<Integer> getIndex() {
+    return Optional.of(logWithMetadata.getLogIndex());
   }
 
   public List<Bytes32> getTopics() {
@@ -44,37 +45,31 @@ public class LogAdapter extends AdapterBase {
     for (LogTopic topic : topics) {
       result.add(Bytes32.leftPad(topic));
     }
-    if (result.size() == 0) {
-      return null;
-    }
     return result;
   }
 
-  public BytesValue getData() {
-    return logWithMetadata.getData();
+  public Optional<BytesValue> getData() {
+    return Optional.of(logWithMetadata.getData());
   }
 
-  public TransactionAdapter getTransaction(final DataFetchingEnvironment environment) {
+  public Optional<TransactionAdapter> getTransaction(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     Hash hash = logWithMetadata.getTransactionHash();
-    TransactionWithMetadata tran = query.transactionByHash(hash).get();
-    if (tran != null) {
-      return new TransactionAdapter(tran);
-    }
-    return null;
+    Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
+    return tran.map(item -> new TransactionAdapter(item));
   }
 
-  public AccountAdapter getAccount(final DataFetchingEnvironment environment) {
+  public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong blockNumber = environment.getArgument("block");
-    MutableWorldState ws = query.getWorldState(blockNumber.longValue()).get();
-    if (ws != null) {
+    Optional<MutableWorldState> ws = query.getWorldState(blockNumber.longValue());
+    Optional<AccountAdapter> result = Optional.empty();
+    if (ws.isPresent()) {
       Hash hash = logWithMetadata.getTransactionHash();
-      TransactionWithMetadata tran = query.transactionByHash(hash).get();
-      if (tran != null) {
-        return new AccountAdapter(ws.get(tran.getTransaction().getSender()));
-      }
+      Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
+      result = tran.map(ele -> new AccountAdapter(ws.get().get(ele.getTransaction().getSender())));
     }
-    return null;
+    ;
+    return result;
   }
 }

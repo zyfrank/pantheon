@@ -20,6 +20,8 @@ import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadat
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
+import java.util.Optional;
+
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -30,16 +32,16 @@ public class TransactionAdapter extends AdapterBase {
     this.transactionWithMetadata = transactionWithMetadata;
   }
 
-  public Hash getHash() {
-    return transactionWithMetadata.getTransaction().hash();
+  public Optional<Hash> getHash() {
+    return Optional.of(transactionWithMetadata.getTransaction().hash());
   }
 
-  public long getNonce() {
-    return transactionWithMetadata.getTransaction().getNonce();
+  public Optional<Long> getNonce() {
+    return Optional.of(transactionWithMetadata.getTransaction().getNonce());
   }
 
-  public int getIndex() {
-    return 1;
+  public Optional<Integer> getIndex() {
+    return Optional.of(1);
   }
   //  # Index is the index of this transaction in the parent block. This will
   //   # be null if the transaction has not yet been mined.
@@ -49,52 +51,53 @@ public class TransactionAdapter extends AdapterBase {
       return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
     }
   */
-  public AccountAdapter getFrom(final DataFetchingEnvironment environment) {
+  public Optional<AccountAdapter> getFrom(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong from = environment.getArgument("from");
 
-    MutableWorldState ws = query.getWorldState(from.longValue()).get();
-    if (ws != null) {
-      return new AccountAdapter(ws.get(transactionWithMetadata.getTransaction().getSender()));
+    Optional<MutableWorldState> ws = query.getWorldState(from.longValue());
+    if (ws.isPresent()) {
+      return Optional.of(
+          new AccountAdapter(ws.get().get(transactionWithMetadata.getTransaction().getSender())));
     }
-    return null;
+    return Optional.empty();
   }
 
-  public AccountAdapter getTo(final DataFetchingEnvironment environment) {
+  public Optional<AccountAdapter> getTo(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong to = environment.getArgument("to");
 
-    MutableWorldState ws = query.getWorldState(to.longValue()).get();
-    if (ws != null) {
-      return new AccountAdapter(ws.get(transactionWithMetadata.getTransaction().getSender()));
+    Optional<MutableWorldState> ws = query.getWorldState(to.longValue());
+    if (ws.isPresent()) {
+      return Optional.of(
+          new AccountAdapter(ws.get().get(transactionWithMetadata.getTransaction().getSender())));
     }
-    return null;
+    return Optional.empty();
   }
 
-  public UInt256 getValue() {
-    return transactionWithMetadata.getTransaction().getValue().asUInt256();
+  public Optional<UInt256> getValue() {
+    return Optional.of(transactionWithMetadata.getTransaction().getValue().asUInt256());
   }
 
-  public UInt256 getGasPrice() {
-    return transactionWithMetadata.getTransaction().getGasPrice().asUInt256();
+  public Optional<UInt256> getGasPrice() {
+    return Optional.of(transactionWithMetadata.getTransaction().getGasPrice().asUInt256());
   }
 
-  public UnsignedLong getGas() {
-    return UnsignedLong.valueOf(transactionWithMetadata.getTransaction().getGasLimit());
+  public Optional<UnsignedLong> getGas() {
+    return Optional.of(
+        UnsignedLong.valueOf(transactionWithMetadata.getTransaction().getGasLimit()));
   }
 
-  public BytesValue getInputData() {
-    return transactionWithMetadata.getTransaction().getPayload();
+  public Optional<BytesValue> getInputData() {
+    return Optional.of(transactionWithMetadata.getTransaction().getPayload());
   }
 
-  public BlockAdapter getBlock(final DataFetchingEnvironment environment) {
+  public Optional<BlockAdapter> getBlock(final DataFetchingEnvironment environment) {
     long blockNumber = transactionWithMetadata.getBlockNumber();
     BlockchainQuery query = getBlockchainQuery(environment);
-    BlockWithMetadata<TransactionWithMetadata, Hash> block = query.blockByNumber(blockNumber).get();
-    if (block != null) {
-      return new BlockAdapter(block);
-    }
-    return null;
+    Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block =
+        query.blockByNumber(blockNumber);
+    return block.map(item -> new BlockAdapter(item));
   }
 
   // public UnsignedLong getStatus() {

@@ -18,6 +18,8 @@ import tech.pegasys.pantheon.util.bytes.Bytes32;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
+import java.util.Optional;
+
 import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -28,24 +30,24 @@ public class AccountAdapter extends AdapterBase {
     this.account = account;
   }
 
-  public Address getAddress() {
-    return account.getAddress();
+  public Optional<Address> getAddress() {
+    return Optional.of(account.getAddress());
   }
 
-  public UInt256 getBalance() {
-    return account.getBalance().asUInt256();
+  public Optional<UInt256> getBalance() {
+    return Optional.of(account.getBalance().asUInt256());
   }
 
-  public UnsignedLong getTransactionCount() {
-    return UnsignedLong.valueOf(account.getNonce());
+  public Optional<UnsignedLong> getTransactionCount() {
+    return Optional.of(UnsignedLong.valueOf(account.getNonce()));
   }
 
-  public BytesValue getCode() {
-    return account.getCode();
+  public Optional<BytesValue> getCode() {
+    return Optional.of(account.getCode());
   }
 
-  public Bytes32 getStorage(final DataFetchingEnvironment environment) {
+  public Optional<Bytes32> getStorage(final DataFetchingEnvironment environment) {
     Bytes32 slot = environment.getArgument("slot");
-    return account.getStorageValue(slot.asUInt256()).getBytes();
+    return Optional.of(account.getStorageValue(slot.asUInt256()).getBytes());
   }
 }
