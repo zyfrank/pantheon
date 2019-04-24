@@ -20,6 +20,7 @@ import static tech.pegasys.pantheon.cli.CommandLineUtils.checkOptionDependencies
 import static tech.pegasys.pantheon.cli.DefaultCommandValues.getDefaultPantheonDataPath;
 import static tech.pegasys.pantheon.cli.NetworkName.MAINNET;
 import static tech.pegasys.pantheon.controller.PantheonController.DATABASE_PATH;
+import static tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLRpcConfiguration.DEFAULT_GRAPHQL_RPC_PORT;
 import static tech.pegasys.pantheon.ethereum.jsonrpc.JsonRpcConfiguration.DEFAULT_JSON_RPC_PORT;
 import static tech.pegasys.pantheon.ethereum.jsonrpc.RpcApis.DEFAULT_JSON_RPC_APIS;
 import static tech.pegasys.pantheon.ethereum.jsonrpc.websocket.WebSocketConfiguration.DEFAULT_WEBSOCKET_PORT;
@@ -49,6 +50,7 @@ import tech.pegasys.pantheon.ethereum.eth.sync.SyncMode;
 import tech.pegasys.pantheon.ethereum.eth.sync.SynchronizerConfiguration;
 import tech.pegasys.pantheon.ethereum.eth.sync.TrailingPeerRequirements;
 import tech.pegasys.pantheon.ethereum.eth.transactions.PendingTransactions;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLRpcConfiguration;
 import tech.pegasys.pantheon.ethereum.jsonrpc.JsonRpcConfiguration;
 import tech.pegasys.pantheon.ethereum.jsonrpc.RpcApi;
 import tech.pegasys.pantheon.ethereum.jsonrpc.RpcApis;
@@ -250,6 +252,26 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
           "P2P network identifier. (default: the selected network chain ID or custom genesis chain ID)",
       arity = "1")
   private final Integer networkId = null;
+
+  @Option(
+      names = {"--graphql-http-enabled"},
+      description = "Set to start the GRAPHQL-RPC HTTP service (default: ${DEFAULT-VALUE})")
+  private final Boolean isGraphQLHttpEnabled = false;
+
+  @SuppressWarnings("FieldMayBeFinal") // Because PicoCLI requires Strings to not be final.
+  @Option(
+      names = {"--graphql-http-host"},
+      paramLabel = MANDATORY_HOST_FORMAT_HELP,
+      description = "Host for GRAPHQL-RPC HTTP to listen on (default: ${DEFAULT-VALUE})",
+      arity = "1")
+  private String graphQLHttpHost = autoDiscoverDefaultIP().getHostAddress();
+
+  @Option(
+      names = {"--graphql-http-port"},
+      paramLabel = MANDATORY_PORT_FORMAT_HELP,
+      description = "Port for GRAPHQL-RPC HTTP to listen on (default: ${DEFAULT-VALUE})",
+      arity = "1")
+  private final Integer graphQLHttpPort = DEFAULT_GRAPHQL_RPC_PORT;
 
   @Option(
       names = {"--rpc-http-enabled"},
@@ -637,6 +659,7 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
     final EthNetworkConfig ethNetworkConfig = updateNetworkConfig(getNetwork());
     try {
       final JsonRpcConfiguration jsonRpcConfiguration = jsonRpcConfiguration();
+      final GraphQLRpcConfiguration graphQLRpcConfiguration = graphQLRpcConfiguration();
       final WebSocketConfiguration webSocketConfiguration = webSocketConfiguration();
       final Optional<PermissioningConfiguration> permissioningConfiguration =
           permissioningConfiguration();
@@ -664,6 +687,7 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
           maxPeers,
           p2pHost,
           p2pPort,
+          graphQLRpcConfiguration,
           jsonRpcConfiguration,
           webSocketConfiguration,
           metricsConfiguration(),
@@ -711,6 +735,28 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
     } catch (final IOException e) {
       throw new ExecutionException(this.commandLine, "Invalid path", e);
     }
+  }
+
+  private GraphQLRpcConfiguration graphQLRpcConfiguration() {
+
+    checkOptionDependencies(
+        logger,
+        commandLine,
+        "--graphql-http-enabled",
+        !isRpcHttpEnabled,
+        asList(
+            "--graphql-http-api",
+            //          "--rpc-http-apis",
+            //          "--rpc-http-cors-origins",
+            "--graphql-http-host",
+            "--graphql-http-port"));
+
+    final GraphQLRpcConfiguration graphQLRpcConfiguration = GraphQLRpcConfiguration.createDefault();
+    graphQLRpcConfiguration.setEnabled(isGraphQLHttpEnabled);
+    graphQLRpcConfiguration.setHost(graphQLHttpHost);
+    graphQLRpcConfiguration.setPort(graphQLHttpPort);
+
+    return graphQLRpcConfiguration;
   }
 
   private JsonRpcConfiguration jsonRpcConfiguration() {
@@ -945,6 +991,7 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
       final int maxPeers,
       final String p2pAdvertisedHost,
       final int p2pListenPort,
+      final GraphQLRpcConfiguration graphQLRpcConfiguration,
       final JsonRpcConfiguration jsonRpcConfiguration,
       final WebSocketConfiguration webSocketConfiguration,
       final MetricsConfiguration metricsConfiguration,
@@ -966,6 +1013,7 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
             .p2pAdvertisedHost(p2pAdvertisedHost)
             .p2pListenPort(p2pListenPort)
             .maxPeers(maxPeers)
+            .graphQLRpcConfiguration(graphQLRpcConfiguration)
             .jsonRpcConfiguration(jsonRpcConfiguration)
             .webSocketConfiguration(webSocketConfiguration)
             .dataDir(dataDir())

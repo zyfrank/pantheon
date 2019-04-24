@@ -102,7 +102,7 @@ public class RunnerBuilder {
   private int p2pListenPort;
   private int maxPeers;
   private JsonRpcConfiguration jsonRpcConfiguration;
-  //  private GraphQLRpcConfiguration graphQLRpcConfiguration;
+  private GraphQLRpcConfiguration graphQLRpcConfiguration;
   private WebSocketConfiguration webSocketConfiguration;
   private Path dataDir;
   private Collection<String> bannedNodeIds;
@@ -164,13 +164,13 @@ public class RunnerBuilder {
     this.jsonRpcConfiguration = jsonRpcConfiguration;
     return this;
   }
-  /*
-    public RunnerBuilder graphQLRpcConfiguration(
-        final GraphQLRpcConfiguration graphQLRpcConfiguration) {
-      this.graphQLRpcConfiguration = graphQLRpcConfiguration;
-      return this;
-    }
-  */
+
+  public RunnerBuilder graphQLRpcConfiguration(
+      final GraphQLRpcConfiguration graphQLRpcConfiguration) {
+    this.graphQLRpcConfiguration = graphQLRpcConfiguration;
+    return this;
+  }
+
   public RunnerBuilder webSocketConfiguration(final WebSocketConfiguration webSocketConfiguration) {
     this.webSocketConfiguration = webSocketConfiguration;
     return this;
@@ -364,8 +364,6 @@ public class RunnerBuilder {
                   vertx, dataDir, jsonRpcConfiguration, metricsSystem, jsonRpcMethods));
     }
 
-    //  BlockchainQuery queries =
-    //    new BlockchainQuery(context.getBlockchain(), context.getWorldStateArchive());
     GraphQLDataFetchers fetchers = new GraphQLDataFetchers(supportedCapabilities);
     GraphQLDataFetcherContext dataFetcherContext =
         new GraphQLDataFetcherContext(
@@ -376,15 +374,19 @@ public class RunnerBuilder {
     } catch (IOException e) {
 
     }
-    Optional<GraphQLRpcHttpService> graphQLRpcHttpService =
-        Optional.of(
-            new GraphQLRpcHttpService(
-                vertx,
-                dataDir,
-                GraphQLRpcConfiguration.createDefault(),
-                graphQL,
-                dataFetcherContext,
-                metricsSystem));
+
+    Optional<GraphQLRpcHttpService> graphQLRpcHttpService = Optional.empty();
+    if (graphQLRpcConfiguration.isEnabled()) {
+      graphQLRpcHttpService =
+          Optional.of(
+              new GraphQLRpcHttpService(
+                  vertx,
+                  dataDir,
+                  GraphQLRpcConfiguration.createDefault(),
+                  graphQL,
+                  dataFetcherContext,
+                  metricsSystem));
+    }
 
     Optional<WebSocketService> webSocketService = Optional.empty();
     if (webSocketConfiguration.isEnabled()) {
