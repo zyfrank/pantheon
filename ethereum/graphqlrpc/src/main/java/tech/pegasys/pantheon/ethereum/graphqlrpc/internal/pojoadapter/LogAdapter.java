@@ -10,11 +10,14 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package tech.pegasys.pantheon.ethereum.graphqlrpc.internal;
+package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.LogTopic;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.LogWithMetadata;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
 import tech.pegasys.pantheon.util.bytes.Bytes32;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 
