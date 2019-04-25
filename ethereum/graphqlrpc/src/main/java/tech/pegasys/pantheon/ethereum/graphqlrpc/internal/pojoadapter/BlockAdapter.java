@@ -165,6 +165,11 @@ public class BlockAdapter extends AdapterBase {
     return Optional.empty();
   }
 
+  public Optional<UnsignedLong> getNumber() {
+    long bn = blockWithMetaData.getHeader().getNumber();
+    return Optional.of(UnsignedLong.valueOf(bn));
+  }
+
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
 
     BlockchainQuery query = getBlockchainQuery(environment);
@@ -179,19 +184,20 @@ public class BlockAdapter extends AdapterBase {
   }
 
   public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
-    /*   Map<String, Object> filters = environment.getArgument("filter");
-    List<Address> addrs = filters.get("addresses");
-    List<List<Bytes32>>   topics = filters.get("topics");*/
+    /*
+     * Map<String, Object> filters = environment.getArgument("filter");
+     * List<Address> addrs = filters.get("addresses"); List<List<Bytes32>> topics =
+     * filters.get("topics");
+     */
     return null;
   }
   /*
-
-
-  # Call executes a local call operation at the current block's state.
-  call(data: CallData!): CallResult
-  # EstimateGas estimates the amount of gas that will be required for
-  # successful execution of a transaction at the current block's state.
-  estimateGas(data: CallData!): Long!
-  */
+   *
+   *
+   * # Call executes a local call operation at the current block's state.
+   * call(data: CallData!): CallResult # EstimateGas estimates the amount of gas
+   * that will be required for # successful execution of a transaction at the
+   * current block's state. estimateGas(data: CallData!): Long!
+   */
 
 }
