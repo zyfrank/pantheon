@@ -465,6 +465,7 @@ public class BlockchainQuery {
             blockhash,
             header.getNumber()));
   }
+
   /**
    * Returns the world state for the corresponding block number
    *
@@ -507,5 +508,33 @@ public class BlockchainQuery {
 
   private boolean withinValidRange(final long blockNumber) {
     return blockNumber <= headBlockNumber() && blockNumber >= BlockHeader.GENESIS_BLOCK_NUMBER;
+  }
+
+  public static List<LogWithMetadata> generateLogWithMetadataForTransaction(
+      final TransactionReceipt receipt,
+      final long number,
+      final Hash blockhash,
+      final Hash transactionHash,
+      final int transactionIndex,
+      final boolean removed) {
+
+    List<LogWithMetadata> logs = new ArrayList<LogWithMetadata>();
+    for (int logIndex = 0; logIndex < receipt.getLogs().size(); ++logIndex) {
+
+      final LogWithMetadata logWithMetaData =
+          LogWithMetadata.create(
+              logIndex,
+              number,
+              blockhash,
+              transactionHash,
+              transactionIndex,
+              receipt.getLogs().get(logIndex).getLogger(),
+              receipt.getLogs().get(logIndex).getData(),
+              receipt.getLogs().get(logIndex).getTopics(),
+              removed);
+      logs.add(logWithMetaData);
+    }
+
+    return logs;
   }
 }

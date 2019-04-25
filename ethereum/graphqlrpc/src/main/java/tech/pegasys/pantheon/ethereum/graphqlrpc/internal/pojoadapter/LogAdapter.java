@@ -63,13 +63,12 @@ public class LogAdapter extends AdapterBase {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong blockNumber = environment.getArgument("block");
     Optional<MutableWorldState> ws = query.getWorldState(blockNumber.longValue());
-    Optional<AccountAdapter> result = Optional.empty();
     if (ws.isPresent()) {
       Hash hash = logWithMetadata.getTransactionHash();
       Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
-      result = tran.map(ele -> new AccountAdapter(ws.get().get(ele.getTransaction().getSender())));
+      return tran.map(ele -> new AccountAdapter(ws.get().get(ele.getTransaction().getSender())));
     }
     ;
-    return result;
+    return Optional.empty();
   }
 }

@@ -18,6 +18,7 @@ import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.TransactionReceipt;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.LogWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionReceiptWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
@@ -147,21 +148,25 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.empty();
   }
 
-  /*
-   *
-   * # Logs is a list of log entries emitted by this transaction. If the #
-   * transaction has not yet been mined, this field will be null. logs: [Log!]
-   */
   public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
+    Hash hash = transactionWithMetadata.getTransaction().hash();
     Optional<TransactionReceiptWithMetadata> tranRpt =
-        query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
+        query.transactionReceiptByTransactionHash(hash);
     List<LogAdapter> results = new ArrayList<LogAdapter>();
-    tranRpt.ifPresent(
-        rpt -> {
-          // List<Log> logs = rpt.getReceipt().getLogs();
-
-        });
+    if (tranRpt.isPresent()) {
+      List<LogWithMetadata> logs =
+          BlockchainQuery.generateLogWithMetadataForTransaction(
+              tranRpt.get().getReceipt(),
+              transactionWithMetadata.getBlockNumber(),
+              transactionWithMetadata.getBlockHash(),
+              hash,
+              transactionWithMetadata.getTransactionIndex(),
+              false);
+      for (LogWithMetadata log : logs) {
+        results.add(new LogAdapter(log));
+      }
+    }
     return results;
   }
 }
