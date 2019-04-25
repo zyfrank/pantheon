@@ -12,21 +12,12 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Objects;
 
-public class GraphQLRpcSuccessResponse implements GraphQLRpcResponse {
-
-  private final Object data;
+public class GraphQLRpcSuccessResponse extends GraphQLRpcResponse {
 
   public GraphQLRpcSuccessResponse(final Object data) {
-    this.data = data;
-  }
-
-  @JsonGetter("data")
-  public Object getData() {
-    return data;
+    super(data);
   }
 
   @Override
@@ -34,72 +25,4 @@ public class GraphQLRpcSuccessResponse implements GraphQLRpcResponse {
   public GraphQLRpcResponseType getType() {
     return GraphQLRpcResponseType.SUCCESS;
   }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final GraphQLRpcSuccessResponse that = (GraphQLRpcSuccessResponse) o;
-    return Objects.equal(data, that.data);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(data);
-  }
 }
-/*
-@JsonPropertyOrder({"graphqlrpc", "errors", "data"})
-public class GraphQLRpcSuccessResponse implements GraphQLRpcResponse {
-
-  private final Object errors;
-  private final Object data;
-
-  public GraphQLRpcSuccessResponse(final Object errors, final Object data) {
-    this.errors = errors;
-    this.data = data;
-  }
-
-  public GraphQLRpcSuccessResponse(final Object data) {
-    this.data = data;
-    errors = null;
-  }
-
-  @JsonGetter("errors")
-  public Object getErrors() {
-    return errors;
-  }
-
-  @JsonGetter("data")
-  public Object getData() {
-    return data;
-  }
-
-  @Override
-  @JsonIgnore
-  public GraphQLRpcResponseType getType() {
-    return GraphQLRpcResponseType.SUCCESS;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final GraphQLRpcSuccessResponse that = (GraphQLRpcSuccessResponse) o;
-    return Objects.equal(errors, that.errors) && Objects.equal(data, that.data);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(errors, data);
-  }
-}
-*/

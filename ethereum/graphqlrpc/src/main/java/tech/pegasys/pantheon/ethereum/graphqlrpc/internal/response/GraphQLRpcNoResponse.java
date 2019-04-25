@@ -12,7 +12,11 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response;
 
-public class GraphQLRpcNoResponse implements GraphQLRpcResponse {
+public class GraphQLRpcNoResponse extends GraphQLRpcResponse {
+
+  public GraphQLRpcNoResponse() {
+    super(null);
+  }
 
   @Override
   public GraphQLRpcResponseType getType() {

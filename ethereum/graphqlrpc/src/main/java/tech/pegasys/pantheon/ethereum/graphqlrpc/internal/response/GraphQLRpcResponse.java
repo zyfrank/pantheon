@@ -12,12 +12,35 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response;
 
-public interface GraphQLRpcResponse {
-  /*
-    @JsonGetter("graphqlrpc")
-    default String getVersion() {
-      return "1.0";
+import com.google.common.base.Objects;
+
+public abstract class GraphQLRpcResponse {
+  public abstract GraphQLRpcResponseType getType();
+
+  protected Object result;
+
+  public GraphQLRpcResponse(final Object result) {
+    this.result = result;
+  }
+
+  public Object getResult() {
+    return result;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
     }
-  */
-  GraphQLRpcResponseType getType();
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final GraphQLRpcResponse that = (GraphQLRpcResponse) o;
+    return Objects.equal(result, that.result);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(result);
+  }
 }

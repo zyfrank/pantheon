@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
@@ -293,7 +294,7 @@ public class GraphQLRpcHttpService {
       return EMPTY_RESPONSE;
     }
 
-    return Json.encodePrettily(response);
+    return Json.encodePrettily(response.getResult());
   }
 
   /*
@@ -304,18 +305,13 @@ public class GraphQLRpcHttpService {
     ExecutionInput executionInput =
         ExecutionInput.newExecutionInput().query(requestJson).context(dataFetcherContext).build();
     ExecutionResult result = graphQL.execute(executionInput);
+    Map<String, Object> toSpecificationResult = result.toSpecification();
     List<GraphQLError> errors = result.getErrors();
     if (errors.size() == 0) {
-
-      return new GraphQLRpcSuccessResponse(result.getData());
+      return new GraphQLRpcSuccessResponse(toSpecificationResult);
     } else {
-      return new GraphQLRpcErrorResponse(errors);
+      return new GraphQLRpcErrorResponse(toSpecificationResult);
     }
-    /*
-     * if ((errors == null) || (errors.size() == 0)) { return new
-     * GraphQLRpcSuccessResponse(null, result.getData()); } else { return new
-     * GraphQLRpcSuccessResponse(null, errors); }
-     */
   }
 
   private void handleGraphQLRpcError(final RoutingContext routingContext, final Object errors) {
