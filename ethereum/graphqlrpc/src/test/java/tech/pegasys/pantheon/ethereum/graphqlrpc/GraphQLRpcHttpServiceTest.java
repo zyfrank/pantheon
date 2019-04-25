@@ -14,6 +14,7 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.pantheon.ethereum.core.InMemoryStorageProvider.createInMemoryBlockchain;
 import static tech.pegasys.pantheon.ethereum.core.InMemoryStorageProvider.createInMemoryWorldStateArchive;
 
@@ -23,6 +24,7 @@ import tech.pegasys.pantheon.ethereum.chain.MutableBlockchain;
 import tech.pegasys.pantheon.ethereum.core.Block;
 import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
+import tech.pegasys.pantheon.ethereum.core.Wei;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.mainnet.MainnetBlockHashFunction;
@@ -46,9 +48,11 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import graphql.GraphQL;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -201,19 +205,33 @@ public class GraphQLRpcHttpServiceTest {
     }
   }
 
+  @Test
+  public void handleUnknownRequestFields() throws Exception {
+    RequestBody body = RequestBody.create(JSON, "{gasPrice1}");
+
+    try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
+      // assertThat(resp.code()).isEqualTo(200); // Check general format of result
+      final JsonObject json = new JsonObject(resp.body().string());
+      testHelper.assertValidGraphQLRpcError(json); // Check result final
+    }
+  }
+
+  @Test
+  public void getGasprice() throws Exception {
+    RequestBody body = RequestBody.create(JSON, "{gasPrice}");
+    Wei price = Wei.of(16);
+    when(miningCoordinatorMock.getMinTransactionGasPrice()).thenReturn(price);
+
+    try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
+      assertThat(resp.code()).isEqualTo(200); // Check general format of result
+      final JsonObject json = new JsonObject(resp.body().string());
+      testHelper.assertValidGraphQLRpcResult(json);
+      final JsonObject expect = new JsonObject("{\"data\":{\"gasPrice\":\"16\"}}");
+      assertThat(json).isEqualTo(expect);
+    }
+  }
+
   /*
-   * @Test public void handleUnknownRequestFields() throws Exception { final
-   * String id = "123"; // Create a request with an extra "beta" param final
-   * RequestBody body = RequestBody.create( JSON, "{\"jsonrpc\":\"2.0\",\"id\":" +
-   * Json.encode(id) + ",\"method\":\"net_version\", \"beta\":true}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * String result = json.getString("result");
-   * assertThat(result).isEqualTo(String.valueOf(CHAIN_ID)); } }
-   *
    * @Test public void getSocketAddressWhenActive() { final InetSocketAddress
    * socketAddress = service.socketAddress();
    * assertThat("127.0.0.1").isEqualTo(socketAddress.getAddress().getHostAddress()
@@ -1404,10 +1422,11 @@ public class GraphQLRpcHttpServiceTest {
    * testHelper.assertValidGraphQLRpcError(json, id, expectedError.getCode(),
    * expectedError.getMessage()); } }
    */
-  /*
-   * private Request buildPostRequest(final RequestBody body) { return new
-   * Request.Builder().post(body).url(baseUrl).build(); }
-   */
+
+  private Request buildPostRequest(final RequestBody body) {
+    return new Request.Builder().post(body).url(baseUrl).build();
+  }
+
   private Request buildGetRequest(final String path) {
     return new Request.Builder().get().url(baseUrl + path).build();
   }

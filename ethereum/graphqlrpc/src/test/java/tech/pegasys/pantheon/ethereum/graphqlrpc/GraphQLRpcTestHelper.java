@@ -20,16 +20,14 @@ import io.vertx.core.json.JsonObject;
 
 public class GraphQLRpcTestHelper {
 
-  protected void assertValidGraphQLRpcResult(final JsonObject json, final Object id) {
+  protected void assertValidGraphQLRpcResult(final JsonObject json) {
     // Check all expected fieldnames are set
     final Set<String> fieldNames = json.fieldNames();
     assertThat(fieldNames.size()).isEqualTo(1);
     assertThat(fieldNames.contains("data")).isTrue();
   }
 
-  protected void assertValidGraphQLRpcError(
-      final JsonObject json, final Object id, final int errorCode, final String errorMessage)
-      throws Exception {
+  protected void assertValidGraphQLRpcError(final JsonObject json) throws Exception {
     // Check all expected fieldnames are set
     final Set<String> fieldNames = json.fieldNames();
     assertThat(fieldNames.size()).isEqualTo(1);
