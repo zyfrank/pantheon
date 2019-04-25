@@ -42,8 +42,9 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.of(transactionWithMetadata.getTransaction().hash());
   }
 
-  public Optional<Long> getNonce() {
-    return Optional.of(transactionWithMetadata.getTransaction().getNonce());
+  public Optional<UnsignedLong> getNonce() {
+    long nonce = transactionWithMetadata.getTransaction().getNonce();
+    return Optional.of(UnsignedLong.valueOf(nonce));
   }
 
   public Optional<Integer> getIndex() {

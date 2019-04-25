@@ -124,8 +124,8 @@ public class GraphQLDataFetchers {
     return dataFetchingEnvironment -> {
       BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
-      Hash hash = dataFetchingEnvironment.getArgument("hash");
-      Optional<TransactionWithMetadata> tran = blockchain.transactionByHash(hash);
+      Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
+      Optional<TransactionWithMetadata> tran = blockchain.transactionByHash(Hash.wrap(hash));
       return tran.map(item -> new TransactionAdapter(item));
     };
   }
