@@ -31,21 +31,18 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
-public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServiceTest {
+public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcHttpServiceTest {
 
   private final String specFileName;
 
-  public EthGraphQLRpcHttpBySpecTest(final String specFileName) {
+  public EthGraphQLRpcHttpBySpecErrorCaseTest(final String specFileName) {
     this.specFileName = specFileName;
   }
 
   @Parameters(name = "{index}: {0}")
   public static Collection<String> specs() {
     final List<String> specs = new ArrayList<String>();
-    specs.add("eth_getTransactionByHash");
-    specs.add("eth_getTransactionByHashNull");
-    specs.add("eth_getBlockByHash");
-    specs.add("eth_getBlockByNumber");
+    specs.add("eth_getBlockWrongParams");
     return specs;
   }
 
@@ -69,13 +66,6 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
     try (final Response resp = client.newCall(request).execute()) {
       final int expectedStatusCode = spec.getInteger("statusCode");
       assertThat(resp.code()).isEqualTo(expectedStatusCode);
-
-      final JsonObject expectedRespBody = spec.getJsonObject("response");
-      final String resultStr = resp.body().string();
-      System.out.println(resultStr);
-
-      final JsonObject result = new JsonObject(resultStr);
-      assertThat(result).isEqualTo(expectedRespBody);
     }
   }
 
