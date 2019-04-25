@@ -14,11 +14,14 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import tech.pegasys.pantheon.ethereum.blockcreation.MiningCoordinator;
 import tech.pegasys.pantheon.ethereum.core.Hash;
+import tech.pegasys.pantheon.ethereum.core.SyncStatus;
+import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.BlockAdapter;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.SyncStateAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.TransactionAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcError;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
@@ -49,6 +52,15 @@ public class GraphQLDataFetchers {
   public DataFetcher<Optional<Integer>> getProtocolVersionDataFetcher() {
     return dataFetchingEnvironment -> {
       return Optional.of(highestEthVersion);
+    };
+  }
+
+  public DataFetcher<Optional<SyncStateAdapter>> getSyncingDataFetcher() {
+    return dataFetchingEnvironment -> {
+      Synchronizer synchronizer =
+          ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getSynchronizer();
+      Optional<SyncStatus> syncStatus = synchronizer.getSyncStatus();
+      return syncStatus.map(item -> new SyncStateAdapter(item));
     };
   }
 

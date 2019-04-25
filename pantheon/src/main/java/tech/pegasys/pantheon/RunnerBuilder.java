@@ -367,7 +367,10 @@ public class RunnerBuilder {
     GraphQLDataFetchers fetchers = new GraphQLDataFetchers(supportedCapabilities);
     GraphQLDataFetcherContext dataFetcherContext =
         new GraphQLDataFetcherContext(
-            context.getBlockchain(), context.getWorldStateArchive(), miningCoordinator);
+            context.getBlockchain(),
+            context.getWorldStateArchive(),
+            miningCoordinator,
+            synchronizer);
     GraphQL graphQL = null;
     try {
       graphQL = GraphQLProvider.buildGraphQL(fetchers);

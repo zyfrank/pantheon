@@ -14,28 +14,19 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.base.Objects;
 
-@JsonPropertyOrder({"graphqlrpc", "id", "error"})
 public class GraphQLRpcErrorResponse implements GraphQLRpcResponse {
 
-  private final Object id;
-  private final GraphQLRpcError error;
+  private final Object errors;
 
-  public GraphQLRpcErrorResponse(final Object id, final GraphQLRpcError error) {
-    this.id = id;
-    this.error = error;
+  public GraphQLRpcErrorResponse(final Object errors) {
+    this.errors = errors;
   }
 
-  @JsonGetter("id")
-  public Object getId() {
-    return id;
-  }
-
-  @JsonGetter("error")
-  public GraphQLRpcError getError() {
-    return error;
+  @JsonGetter("errors")
+  public Object getInfo() {
+    return errors;
   }
 
   @Override
@@ -53,11 +44,36 @@ public class GraphQLRpcErrorResponse implements GraphQLRpcResponse {
       return false;
     }
     final GraphQLRpcErrorResponse that = (GraphQLRpcErrorResponse) o;
-    return Objects.equal(id, that.id) && error == that.error;
+    return Objects.equal(errors, that.errors);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(id, error);
+    return Objects.hashCode(errors);
   }
 }
+/*
+ * @JsonPropertyOrder({"graphqlrpc", "id", "error"}) public class
+ * GraphQLRpcErrorResponse implements GraphQLRpcResponse {
+ *
+ * private final Object id; private final GraphQLRpcError error;
+ *
+ * public GraphQLRpcErrorResponse(final Object id, final GraphQLRpcError error)
+ * { this.id = id; this.error = error; }
+ *
+ * @JsonGetter("id") public Object getId() { return id; }
+ *
+ * @JsonGetter("error") public GraphQLRpcError getError() { return error; }
+ *
+ * @Override
+ *
+ * @JsonIgnore public GraphQLRpcResponseType getType() { return
+ * GraphQLRpcResponseType.ERROR; }
+ *
+ * @Override public boolean equals(final Object o) { if (this == o) { return
+ * true; } if (o == null || getClass() != o.getClass()) { return false; } final
+ * GraphQLRpcErrorResponse that = (GraphQLRpcErrorResponse) o; return
+ * Objects.equal(id, that.id) && error == that.error; }
+ *
+ * @Override public int hashCode() { return Objects.hashCode(id, error); } }
+ */

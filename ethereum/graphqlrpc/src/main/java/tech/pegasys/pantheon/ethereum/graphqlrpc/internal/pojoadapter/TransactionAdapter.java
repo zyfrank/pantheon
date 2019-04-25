@@ -12,14 +12,19 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
+import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
+import tech.pegasys.pantheon.ethereum.core.TransactionReceipt;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionReceiptWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.google.common.primitives.UnsignedLong;
@@ -41,16 +46,9 @@ public class TransactionAdapter extends AdapterBase {
   }
 
   public Optional<Integer> getIndex() {
-    return Optional.of(1);
+    return Optional.of(transactionWithMetadata.getTransactionIndex());
   }
-  //  # Index is the index of this transaction in the parent block. This will
-  //   # be null if the transaction has not yet been mined.
-  //  index: Int
-  /*
-    private BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
-      return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
-    }
-  */
+
   public Optional<AccountAdapter> getFrom(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     UnsignedLong from = environment.getArgument("from");
@@ -100,37 +98,70 @@ public class TransactionAdapter extends AdapterBase {
     return block.map(item -> new BlockAdapter(item));
   }
 
-  // public UnsignedLong getStatus() {
-  //
-  // }
-  /*  # Status is the return status of the transaction. This will be 1 if the
-  # transaction succeeded, or 0 if it failed (due to a revert, or due to
-  # running out of gas). If the transaction has not yet been mined, this
-  # field will be null.
-  status: Long*/
-  /*
-  	public UnsignedLong getGasUsed(){
-  long blockNumber = transactionWithMetadata.getBlockNumber();
-      BlockchainQuery query = getBlockchainQuery(environment);
-  BlockWithMetadata block = (query.blockByNumber(blockNumber).get();
-  return UnsignedLong.valueOf(block.getHeader().getGasUsed());
-  	}
-  */
-  /*
-     # CumulativeGasUsed is the total gas used in the block up to and including
-     # this transaction. If the transaction has not yet been mined, this field
-     # will be null.
-  cumulativeGasUsed: Long
+  public Optional<UnsignedLong> getStatus(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = getBlockchainQuery(environment);
+    Optional<TransactionReceiptWithMetadata> rpt =
+        query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
+    Optional<UnsignedLong> result = Optional.empty();
+    if (rpt.isPresent()) {
+      TransactionReceipt receipt = rpt.get().getReceipt();
+      result = Optional.of(UnsignedLong.valueOf(receipt.getStatus()));
+    }
+    return result;
+  }
 
-  # CreatedContract is the account that was created by a contract creation
-     # transaction. If the transaction was not a contract creation transaction,
-     # or it has not yet been mined, this field will be null.
-     createdContract(block: Long): Account
-     # Logs is a list of log entries emitted by this transaction. If the
-     # transaction has not yet been mined, this field will be null.
-  logs: [Log!]
-  */
-  // public List<LogAdapter> getLogs(){
+  public Optional<UnsignedLong> getGasUsed(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = getBlockchainQuery(environment);
+    Optional<TransactionReceiptWithMetadata> rpt =
+        query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
+    if (rpt.isPresent()) {
+      return Optional.of(UnsignedLong.valueOf(rpt.get().getGasUsed()));
+    }
+    return Optional.empty();
+  }
 
-  // }
+  public Optional<UnsignedLong> getCumulativeGasUsed(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = getBlockchainQuery(environment);
+    Optional<TransactionReceiptWithMetadata> rpt =
+        query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
+    if (rpt.isPresent()) {
+      TransactionReceipt receipt = rpt.get().getReceipt();
+      return Optional.of(UnsignedLong.valueOf(receipt.getCumulativeGasUsed()));
+    }
+    return Optional.empty();
+  }
+
+  public Optional<AccountAdapter> getCreatedContract(final DataFetchingEnvironment environment) {
+    boolean contractCreated = transactionWithMetadata.getTransaction().isContractCreation();
+    if (contractCreated) {
+      Optional<Address> addr = transactionWithMetadata.getTransaction().getTo();
+      if (addr.isPresent()) {
+        BlockchainQuery query = getBlockchainQuery(environment);
+        UnsignedLong bn = environment.getArgument("block");
+        Optional<MutableWorldState> ws = query.getWorldState(bn.longValue());
+        if (ws.isPresent()) {
+          return Optional.of(new AccountAdapter(ws.get().get(addr.get())));
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  /*
+   *
+   * # Logs is a list of log entries emitted by this transaction. If the #
+   * transaction has not yet been mined, this field will be null. logs: [Log!]
+   */
+  public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
+    BlockchainQuery query = getBlockchainQuery(environment);
+    Optional<TransactionReceiptWithMetadata> tranRpt =
+        query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
+    List<LogAdapter> results = new ArrayList<LogAdapter>();
+    tranRpt.ifPresent(
+        rpt -> {
+          // List<Log> logs = rpt.getReceipt().getLogs();
+
+        });
+    return results;
+  }
 }

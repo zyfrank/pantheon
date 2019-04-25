@@ -16,7 +16,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Streams.stream;
 import static tech.pegasys.pantheon.util.NetworkUtility.urlForSocketAddress;
 
-import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcError;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcErrorResponse;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcResponse;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcResponseType;
@@ -61,7 +60,8 @@ public class GraphQLRpcHttpService {
 
   private static final InetSocketAddress EMPTY_SOCKET_ADDRESS = new InetSocketAddress("0.0.0.0", 0);
   private static final String APPLICATION_JSON = "application/json";
-  // private static final GraphQLRpcResponse NO_RESPONSE = new GraphQLRpcNoResponse();
+  // private static final GraphQLRpcResponse NO_RESPONSE = new
+  // GraphQLRpcNoResponse();
   private static final String EMPTY_RESPONSE = "";
 
   private final Vertx vertx;
@@ -75,6 +75,7 @@ public class GraphQLRpcHttpService {
 
   // as GraphQL dataFetcher context data
   private GraphQLDataFetcherContext dataFetcherContext;
+
   /**
    * Construct a GraphQLRpcHttpService handler
    *
@@ -188,7 +189,8 @@ public class GraphQLRpcHttpService {
     final Iterable<String> splitHostHeader = Splitter.on(':').split(event.request().host());
     final long hostPieces = stream(splitHostHeader).count();
     if (hostPieces > 1) {
-      // If the host contains a colon, verify the host is correctly formed - host [ ":" port ]
+      // If the host contains a colon, verify the host is correctly formed - host [
+      // ":" port ]
       if (hostPieces > 2 || !Iterables.get(splitHostHeader, 1).matches("\\d{1,5}+")) {
         return Optional.empty();
       }
@@ -240,7 +242,7 @@ public class GraphQLRpcHttpService {
       handleGraphQLSingleRequest(routingContext, graphQuery);
 
     } catch (final DecodeException ex) {
-      handleGraphQLRpcError(routingContext, null, GraphQLRpcError.PARSE_ERROR);
+      handleGraphQLRpcError(routingContext, ex);
     }
   }
 
@@ -293,36 +295,40 @@ public class GraphQLRpcHttpService {
 
     return Json.encodePrettily(response);
   }
+
   /*
-    private boolean isNonEmptyResponses(final GraphQLRpcResponse result) {
-      return result.getType() != GraphQLRpcResponseType.NONE;
-    }
-  */
+   * private boolean isNonEmptyResponses(final GraphQLRpcResponse result) { return
+   * result.getType() != GraphQLRpcResponseType.NONE; }
+   */
   private GraphQLRpcResponse process(final String requestJson) {
     ExecutionInput executionInput =
         ExecutionInput.newExecutionInput().query(requestJson).context(dataFetcherContext).build();
     ExecutionResult result = graphQL.execute(executionInput);
     List<GraphQLError> errors = result.getErrors();
-    return new GraphQLRpcSuccessResponse(errors, result.getData());
-    /*   if ((errors == null) || (errors.size() == 0)) {
-      return new GraphQLRpcSuccessResponse(null, result.getData());
+    if (errors.size() == 0) {
+
+      return new GraphQLRpcSuccessResponse(result.getData());
     } else {
-      return new GraphQLRpcSuccessResponse(null, errors);
-    }*/
+      return new GraphQLRpcErrorResponse(errors);
+    }
+    /*
+     * if ((errors == null) || (errors.size() == 0)) { return new
+     * GraphQLRpcSuccessResponse(null, result.getData()); } else { return new
+     * GraphQLRpcSuccessResponse(null, errors); }
+     */
   }
 
-  private void handleGraphQLRpcError(
-      final RoutingContext routingContext, final Object id, final GraphQLRpcError error) {
+  private void handleGraphQLRpcError(final RoutingContext routingContext, final Object errors) {
     routingContext
         .response()
         .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
-        .end(Json.encode(new GraphQLRpcErrorResponse(id, error)));
+        .end(Json.encode(new GraphQLRpcErrorResponse(errors)));
   }
+
   /*
-    private GraphQLRpcResponse errorResponse(final Object id, final GraphQLRpcError error) {
-      return new GraphQLRpcErrorResponse(id, error);
-    }
-  */
+   * private GraphQLRpcResponse errorResponse(final Object id, final
+   * GraphQLRpcError error) { return new GraphQLRpcErrorResponse(id, error); }
+   */
   private String buildCorsRegexFromConfig() {
     if (config.getCorsAllowedDomains().isEmpty()) {
       return "";
