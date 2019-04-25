@@ -206,7 +206,7 @@ public class GraphQLRpcHttpServiceTest {
   }
 
   @Test
-  public void handleUnknownRequestFields() throws Exception {
+  public void handleInvalidQuerySchema() throws Exception {
     RequestBody body = RequestBody.create(JSON, "{gasPrice1}");
 
     try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
@@ -226,8 +226,8 @@ public class GraphQLRpcHttpServiceTest {
       assertThat(resp.code()).isEqualTo(200); // Check general format of result
       final JsonObject json = new JsonObject(resp.body().string());
       testHelper.assertValidGraphQLRpcResult(json);
-      final JsonObject expect = new JsonObject("{\"data\":{\"gasPrice\":\"16\"}}");
-      assertThat(json).isEqualTo(expect);
+      String result = json.getJsonObject("data").getString("gasPrice");
+      assertThat(result).isEqualTo("16");
     }
   }
 
@@ -277,19 +277,21 @@ public class GraphQLRpcHttpServiceTest {
    * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
    * String result = json.getString("result");
    * assertThat(result).isEqualTo(CLIENT_VERSION); } }
-   *
-   * @Test public void netVersionSuccessful() throws Exception { final String id =
-   * "123"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) +
-   * ",\"method\":\"net_version\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * String result = json.getString("result");
-   * assertThat(result).isEqualTo(String.valueOf(CHAIN_ID)); } }
-   *
+   */
+  @Test
+  public void netVersionSuccessful() throws Exception {
+    final RequestBody body = RequestBody.create(JSON, "{protocolVersion}");
+
+    try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
+      assertThat(resp.code()).isEqualTo(200); // Check general format of result
+      final JsonObject json = new JsonObject(resp.body().string());
+      testHelper.assertValidGraphQLRpcResult(json); // Check result final
+      Integer result = json.getJsonObject("data").getInteger("protocolVersion");
+      assertThat(result).isEqualTo(63);
+    }
+  }
+
+  /*
    * @Test public void ethAccountsSuccessful() throws Exception { final String id
    * = "123"; final RequestBody body = RequestBody.create(JSON,
    * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) +
