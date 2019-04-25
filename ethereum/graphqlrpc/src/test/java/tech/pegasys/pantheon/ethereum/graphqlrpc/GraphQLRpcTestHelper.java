@@ -1,0 +1,50 @@
+/*
+ * Copyright 2018 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+package tech.pegasys.pantheon.ethereum.graphqlrpc;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Set;
+
+import io.vertx.core.json.JsonObject;
+
+public class GraphQLRpcTestHelper {
+
+  protected void assertValidGraphQLRpcResult(final JsonObject json, final Object id) {
+    // Check all expected fieldnames are set
+    final Set<String> fieldNames = json.fieldNames();
+    assertThat(fieldNames.size()).isEqualTo(1);
+    assertThat(fieldNames.contains("data")).isTrue();
+  }
+
+  protected void assertValidGraphQLRpcError(
+      final JsonObject json, final Object id, final int errorCode, final String errorMessage)
+      throws Exception {
+    // Check all expected fieldnames are set
+    final Set<String> fieldNames = json.fieldNames();
+    assertThat(fieldNames.size()).isEqualTo(1);
+    assertThat(fieldNames.contains("errors")).isTrue();
+
+    /*
+     * // Check error format final JsonObject error = json.getJsonObject("error");
+     * final Set<String> errorFieldNames = error.fieldNames();
+     * assertThat(errorFieldNames.size()).isEqualTo(2);
+     * assertThat(errorFieldNames.contains("code")).isTrue();
+     * assertThat(errorFieldNames.contains("message")).isTrue();
+     *
+     * // Check error field values
+     * assertThat(error.getInteger("code")).isEqualTo(errorCode);
+     * assertThat(error.getString("message")).isEqualTo(errorMessage);
+     */
+  }
+}
