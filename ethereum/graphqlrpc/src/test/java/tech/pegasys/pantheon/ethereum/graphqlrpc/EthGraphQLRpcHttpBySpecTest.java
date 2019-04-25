@@ -49,7 +49,7 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
   public static Collection<String> specs() {
     final List<String> specs = new ArrayList<String>();
     specs.add("eth_getTransactionByHash");
-
+    specs.add("eth_getBlockByHash");
     return specs;
   }
   // @formatter:on
