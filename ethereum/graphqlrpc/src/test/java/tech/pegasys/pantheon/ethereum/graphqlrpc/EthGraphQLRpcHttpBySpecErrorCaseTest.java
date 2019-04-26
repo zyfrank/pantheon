@@ -43,6 +43,7 @@ public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcH
   public static Collection<String> specs() {
     final List<String> specs = new ArrayList<String>();
     specs.add("eth_getBlockWrongParams");
+    specs.add("eth_getBlocksByWrongRange");
     return specs;
   }
 
@@ -61,10 +62,11 @@ public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcH
     final String rawRequestBody = spec.getString("request");
     final RequestBody requestBody = RequestBody.create(JSON, rawRequestBody);
     final Request request = new Request.Builder().post(requestBody).url(baseUrl).build();
-    System.out.println(rawRequestBody);
+
     importBlocks(1, BLOCKS.size());
     try (final Response resp = client.newCall(request).execute()) {
       final int expectedStatusCode = spec.getInteger("statusCode");
+      System.out.println(resp.body().string());
       assertThat(resp.code()).isEqualTo(expectedStatusCode);
     }
   }

@@ -46,6 +46,7 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
     specs.add("eth_getTransactionByHashNull");
     specs.add("eth_getBlockByHash");
     specs.add("eth_getBlockByNumber");
+    specs.add("eth_getBlocksByRange");
     return specs;
   }
 
@@ -64,7 +65,7 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
     final String rawRequestBody = spec.getString("request");
     final RequestBody requestBody = RequestBody.create(JSON, rawRequestBody);
     final Request request = new Request.Builder().post(requestBody).url(baseUrl).build();
-    System.out.println(rawRequestBody);
+
     importBlocks(1, BLOCKS.size());
     try (final Response resp = client.newCall(request).execute()) {
       final int expectedStatusCode = spec.getInteger("statusCode");
