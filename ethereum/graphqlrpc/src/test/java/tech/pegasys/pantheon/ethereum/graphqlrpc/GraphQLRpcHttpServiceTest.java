@@ -36,6 +36,7 @@ import tech.pegasys.pantheon.ethereum.util.RawBlockIterator;
 import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
 import tech.pegasys.pantheon.metrics.noop.NoOpMetricsSystem;
 
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -118,12 +119,17 @@ public class GraphQLRpcHttpServiceTest {
     baseUrl = service.url();
   }
 
-  /*
-   * private static GraphQLRpcHttpService createGraphQLRpcHttpService( final
-   * GraphQLRpcConfiguration config) throws Exception { return new
-   * GraphQLRpcHttpService( vertx, folder.newFolder().toPath(), config, graphQL,
-   * dataFetcherContext, new NoOpMetricsSystem()); }
-   */
+  private static GraphQLRpcHttpService createGraphQLRpcHttpService(
+      final GraphQLRpcConfiguration config) throws Exception {
+    return new GraphQLRpcHttpService(
+        vertx,
+        folder.newFolder().toPath(),
+        config,
+        graphQL,
+        dataFetcherContext,
+        new NoOpMetricsSystem());
+  }
+
   private static GraphQLRpcHttpService createGraphQLRpcHttpService() throws Exception {
     return new GraphQLRpcHttpService(
         vertx,
@@ -231,94 +237,51 @@ public class GraphQLRpcHttpServiceTest {
     }
   }
 
-  /*
-   * @Test public void getSocketAddressWhenActive() { final InetSocketAddress
-   * socketAddress = service.socketAddress();
-   * assertThat("127.0.0.1").isEqualTo(socketAddress.getAddress().getHostAddress()
-   * ); assertThat(socketAddress.getPort() > 0).isTrue(); }
-   *
-   * @Test public void getSocketAddressWhenStoppedIsEmpty() throws Exception {
-   * final GraphQLRpcHttpService service = createGraphQLRpcHttpService();
-   *
-   * final InetSocketAddress socketAddress = service.socketAddress();
-   * assertThat("0.0.0.0").isEqualTo(socketAddress.getAddress().getHostAddress());
-   * assertThat(0).isEqualTo(socketAddress.getPort());
-   * assertThat("").isEqualTo(service.url()); }
-   *
-   * @Test public void getSocketAddressWhenBindingToAllInterfaces() throws
-   * Exception { final GraphQLRpcConfiguration config = createGraphQLRpcConfig();
-   * config.setHost("0.0.0.0"); final GraphQLRpcHttpService service =
-   * createGraphQLRpcHttpService(config); service.start().join();
-   *
-   * try { final InetSocketAddress socketAddress = service.socketAddress();
-   * assertThat("0.0.0.0").isEqualTo(socketAddress.getAddress().getHostAddress());
-   * assertThat(socketAddress.getPort() > 0).isTrue();
-   * assertThat(!service.url().contains("0.0.0.0")).isTrue(); } finally {
-   * service.stop().join(); } }
-   *
-   * /*
-   *
-   * @Test public void responseContainsJsonContentTypeHeader() throws Exception {
-   * final String id = "123"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) +
-   * ",\"method\":\"web3_clientVersion\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.header("Content-Type")).isEqualTo("application/json"); } }
-   *
-   * @Test public void web3ClientVersionSuccessful() throws Exception { final
-   * String id = "123"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) +
-   * ",\"method\":\"web3_clientVersion\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * String result = json.getString("result");
-   * assertThat(result).isEqualTo(CLIENT_VERSION); } }
-   */
   @Test
-  public void netVersionSuccessful() throws Exception {
-    final RequestBody body = RequestBody.create(JSON, "{protocolVersion}");
+  public void getSocketAddressWhenActive() {
+    final InetSocketAddress socketAddress = service.socketAddress();
+    assertThat("127.0.0.1").isEqualTo(socketAddress.getAddress().getHostAddress());
+    assertThat(socketAddress.getPort() > 0).isTrue();
+  }
+
+  @Test
+  public void getSocketAddressWhenStoppedIsEmpty() throws Exception {
+    final GraphQLRpcHttpService service = createGraphQLRpcHttpService();
+
+    final InetSocketAddress socketAddress = service.socketAddress();
+    assertThat("0.0.0.0").isEqualTo(socketAddress.getAddress().getHostAddress());
+    assertThat(0).isEqualTo(socketAddress.getPort());
+    assertThat("").isEqualTo(service.url());
+  }
+
+  @Test
+  public void getSocketAddressWhenBindingToAllInterfaces() throws Exception {
+    final GraphQLRpcConfiguration config = createGraphQLRpcConfig();
+    config.setHost("0.0.0.0");
+    final GraphQLRpcHttpService service = createGraphQLRpcHttpService(config);
+    service.start().join();
+
+    try {
+      final InetSocketAddress socketAddress = service.socketAddress();
+      assertThat("0.0.0.0").isEqualTo(socketAddress.getAddress().getHostAddress());
+      assertThat(socketAddress.getPort() > 0).isTrue();
+      assertThat(!service.url().contains("0.0.0.0")).isTrue();
+    } finally {
+      service.stop().join();
+    }
+  }
+
+  @Test
+  public void responseContainsJsonContentTypeHeader() throws Exception {
+
+    final RequestBody body = RequestBody.create(JSON, "{gasPrice}");
 
     try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
-      assertThat(resp.code()).isEqualTo(200); // Check general format of result
-      final JsonObject json = new JsonObject(resp.body().string());
-      testHelper.assertValidGraphQLRpcResult(json); // Check result final
-      Integer result = json.getJsonObject("data").getInteger("protocolVersion");
-      assertThat(result).isEqualTo(63);
+      assertThat(resp.header("Content-Type")).isEqualTo("application/json");
     }
   }
 
   /*
-   * @Test public void ethAccountsSuccessful() throws Exception { final String id
-   * = "123"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) +
-   * ",\"method\":\"eth_accounts\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * JsonArray result = json.getJsonArray("result");
-   * assertThat(result.size()).isEqualTo(0); } }
-   *
-   * @Test public void netPeerCountSuccessful() throws Exception {
-   * when(peerDiscoveryMock.getPeers()).thenReturn(Arrays.asList(null, null,
-   * null));
-   *
-   * final String id = "123"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) +
-   * ",\"method\":\"net_peerCount\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * String expectedResult = "0x3";
-   * assertThat(json.getString("result")).isEqualTo(expectedResult); } }
-   *
    * @Test public void ethGetUncleCountByBlockHash() throws Exception { final int
    * uncleCount = 2; final Hash blockHash = Hash.hash(BytesValue.of(1));
    * when(blockchainQueries.getOmmerCount(eq(blockHash))).thenReturn(Optional.of(

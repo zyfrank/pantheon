@@ -55,11 +55,11 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class EthJsonRpcHttpBySpecTest extends AbstractEthJsonRpcHttpServiceTest {
 
-  private final String specFileName;
+    private final String specFileName;
 
-  public EthJsonRpcHttpBySpecTest(final String specFileName) {
-    this.specFileName = specFileName;
-  }
+    public EthJsonRpcHttpBySpecTest(final String specFileName) {
+        this.specFileName = specFileName;
+    }
 
   /*
    Mapping between Json-RPC method class and its spec files
@@ -237,7 +237,6 @@ public class EthJsonRpcHttpBySpecTest extends AbstractEthJsonRpcHttpServiceTest 
 
     return specs.values();
   }
-  // @formatter:on
 
   @Test
   public void jsonRPCCallWithSpecFile() throws Exception {
