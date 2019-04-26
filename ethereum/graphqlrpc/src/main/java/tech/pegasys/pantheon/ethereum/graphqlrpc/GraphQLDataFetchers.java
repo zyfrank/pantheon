@@ -107,11 +107,13 @@ public class GraphQLDataFetchers {
         throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
       }
 
-      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block;
+      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block = Optional.empty();
       if (number != null) {
         block = blockchain.blockByNumber(number.longValue());
       } else {
-        block = blockchain.blockByHash(Hash.wrap(hash));
+        if (hash != null) {
+          block = blockchain.blockByHash(Hash.wrap(hash));
+        }
       }
       if (!block.isPresent()) {
         block = blockchain.latestBlock();

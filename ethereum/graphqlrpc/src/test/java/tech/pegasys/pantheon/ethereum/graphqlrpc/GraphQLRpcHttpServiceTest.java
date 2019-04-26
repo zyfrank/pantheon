@@ -106,7 +106,7 @@ public class GraphQLRpcHttpServiceTest {
     miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
     dataFetcherContext =
         new GraphQLDataFetcherContext(
-            blockchain, stateArchive, miningCoordinatorMock, synchronizer);
+            blockchain, stateArchive, PROTOCOL_SCHEDULE, miningCoordinatorMock, synchronizer);
     final Set<Capability> supportedCapabilities = new HashSet<>();
     supportedCapabilities.add(EthProtocol.ETH62);
     supportedCapabilities.add(EthProtocol.ETH63);

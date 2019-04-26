@@ -47,6 +47,8 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
     specs.add("eth_getBlockByHash");
     specs.add("eth_getBlockByNumber");
     specs.add("eth_getBlocksByRange");
+    specs.add("eth_call_Block8");
+    specs.add("eth_call_BlockLatest");
     return specs;
   }
 

@@ -167,7 +167,7 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
     config.setPort(0);
     final GraphQLDataFetcherContext dataFetcherContext =
         new GraphQLDataFetcherContext(
-            blockchain, stateArchive, miningCoordinatorMock, synchronizerMock);
+            blockchain, stateArchive, PROTOCOL_SCHEDULE, miningCoordinatorMock, synchronizerMock);
 
     final GraphQLDataFetchers dataFetchers = new GraphQLDataFetchers(supportedCapabilities);
     final GraphQL graphQL = GraphQLProvider.buildGraphQL(dataFetchers);

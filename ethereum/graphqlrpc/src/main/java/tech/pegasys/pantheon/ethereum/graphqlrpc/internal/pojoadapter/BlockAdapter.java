@@ -15,15 +15,22 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
+import tech.pegasys.pantheon.ethereum.core.Wei;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
+import tech.pegasys.pantheon.ethereum.mainnet.ProtocolSchedule;
+import tech.pegasys.pantheon.ethereum.transaction.CallParameter;
+import tech.pegasys.pantheon.ethereum.transaction.TransactionSimulator;
+import tech.pegasys.pantheon.ethereum.transaction.TransactionSimulatorResult;
 import tech.pegasys.pantheon.util.bytes.Bytes32;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.common.primitives.Longs;
@@ -191,13 +198,55 @@ public class BlockAdapter extends AdapterBase {
      */
     return null;
   }
-  /*
-   *
-   *
-   * # Call executes a local call operation at the current block's state.
-   * call(data: CallData!): CallResult # EstimateGas estimates the amount of gas
-   * that will be required for # successful execution of a transaction at the
-   * current block's state. estimateGas(data: CallData!): Long!
-   */
 
+  public Optional<CallResult> getCall(final DataFetchingEnvironment environment) {
+
+    Map<String, Object> callData = environment.getArgument("data");
+    Address from = (Address) callData.get("from");
+    Address to = (Address) callData.get("to");
+    UnsignedLong gas = (UnsignedLong) callData.get("gas");
+    UInt256 gasPrice = (UInt256) callData.get("gasPrice");
+    UInt256 value = (UInt256) callData.get("value");
+    BytesValue data = (BytesValue) callData.get("data");
+
+    final BlockchainQuery query = getBlockchainQuery(environment);
+    ProtocolSchedule<?> protocolSchedule =
+        ((GraphQLDataFetcherContext) environment.getContext()).getProtocolSchedule();
+    long bn = blockWithMetaData.getHeader().getNumber();
+
+    final TransactionSimulator transactionSimulator =
+        new TransactionSimulator(
+            query.getBlockchain(), query.getWorldStateArchive(), protocolSchedule);
+
+    long gasParam = -1;
+    Wei gasPriceParam = null;
+    Wei valueParam = null;
+    if (gas != null) {
+      gasParam = gas.longValue();
+    }
+    if (gasPrice != null) {
+      gasPriceParam = Wei.of(gasPrice);
+    }
+    if (value != null) {
+      valueParam = Wei.of(value);
+    }
+    final CallParameter param =
+        new CallParameter(from, to, gasParam, gasPriceParam, valueParam, data);
+
+    final Optional<TransactionSimulatorResult> opt = transactionSimulator.process(param, bn);
+    if (opt.isPresent()) {
+      TransactionSimulatorResult result = opt.get();
+      long status = 0;
+      if (result.isSuccessful()) {
+        status = 1;
+      }
+      CallResult callResult =
+          new CallResult(
+              UnsignedLong.valueOf(status),
+              UnsignedLong.valueOf(result.getGasEstimate()),
+              result.getOutput());
+      return Optional.of(callResult);
+    }
+    return Optional.empty();
+  }
 }
