@@ -28,6 +28,7 @@ import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.BlockImporter;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.core.Transaction;
+import tech.pegasys.pantheon.ethereum.core.Wei;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
 import tech.pegasys.pantheon.ethereum.eth.transactions.PendingTransactions;
 import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
@@ -138,9 +139,11 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
     final Synchronizer synchronizerMock = mock(Synchronizer.class);
     // final P2PNetwork peerDiscoveryMock = mock(P2PNetwork.class);
     final TransactionPool transactionPoolMock = mock(TransactionPool.class);
-    final EthHashMiningCoordinator miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
     when(transactionPoolMock.addLocalTransaction(any(Transaction.class)))
         .thenReturn(ValidationResult.valid());
+    final EthHashMiningCoordinator miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
+    when(miningCoordinatorMock.getMinTransactionGasPrice()).thenReturn(Wei.of(16));
+
     final PendingTransactions pendingTransactionsMock = mock(PendingTransactions.class);
     when(transactionPoolMock.getPendingTransactions()).thenReturn(pendingTransactionsMock);
     // final PrivacyParameters privacyParameters = mock(PrivacyParameters.class);

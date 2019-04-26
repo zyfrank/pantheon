@@ -148,6 +148,8 @@ public class GraphQLDataFetchers {
         Account acc = ws.get().get(addr);
         if (acc != null) {
           return new AccountAdapter(acc);
+        } else {
+          throw new CustomException(GraphQLRpcError.INTERNAL_ERROR);
         }
       }
       // invalid blocknumber
