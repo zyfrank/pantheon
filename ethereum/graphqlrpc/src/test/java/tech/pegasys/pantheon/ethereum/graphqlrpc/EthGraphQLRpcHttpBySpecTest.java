@@ -50,6 +50,8 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
     specs.add("eth_getBlockByNumber");
     specs.add("eth_getBlockTransactionCountByHash");
     specs.add("eth_getBlockTransactionCountByNumber");
+    specs.add("eth_getTransactionByBlockHashAndIndex");
+    specs.add("eth_getTransactionByBlockNumberAndIndex");
 
     specs.add("eth_getBlocksByRange");
     specs.add("eth_call_Block8");
