@@ -61,6 +61,7 @@ public class GraphQLProvider {
         .scalar(new BigIntScalar())
         .type(
             newTypeWiring("Query")
+                .dataFetcher("account", graphQLDataFetchers.getAccountDataFetcher())
                 .dataFetcher("block", graphQLDataFetchers.getBlockDataFetcher())
                 .dataFetcher("blocks", graphQLDataFetchers.getRangeBlockDataFetcher())
                 .dataFetcher("transaction", graphQLDataFetchers.getTransactionDataFetcher())

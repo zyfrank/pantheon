@@ -13,13 +13,17 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import tech.pegasys.pantheon.ethereum.blockcreation.MiningCoordinator;
+import tech.pegasys.pantheon.ethereum.core.Account;
+import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
+import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.SyncStatus;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.AccountAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.BlockAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.SyncStateAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.TransactionAdapter;
@@ -119,6 +123,35 @@ public class GraphQLDataFetchers {
         block = blockchain.latestBlock();
       }
       return block.map(item -> new BlockAdapter(item));
+    };
+  }
+
+  public DataFetcher<AccountAdapter> getAccountDataFetcher() {
+    return dataFetchingEnvironment -> {
+      BlockchainQuery blockchain =
+          ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
+      Address addr = dataFetchingEnvironment.getArgument("address");
+      UnsignedLong bn = dataFetchingEnvironment.getArgument("blockNumber");
+      if (bn != null) {
+        Optional<MutableWorldState> ws = blockchain.getWorldState(bn.longValue());
+        if (ws.isPresent()) {
+          return new AccountAdapter(ws.get().get(addr));
+        } else {
+          // invalid blocknumber
+          throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+        }
+      }
+      // return account on latest block
+      long latestBn = blockchain.latestBlock().get().getHeader().getNumber();
+      Optional<MutableWorldState> ws = blockchain.getWorldState(latestBn);
+      if (ws.isPresent()) {
+        Account acc = ws.get().get(addr);
+        if (acc != null) {
+          return new AccountAdapter(acc);
+        }
+      }
+      // invalid blocknumber
+      throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
     };
   }
 

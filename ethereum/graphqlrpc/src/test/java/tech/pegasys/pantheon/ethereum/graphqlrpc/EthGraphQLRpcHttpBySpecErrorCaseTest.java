@@ -33,60 +33,61 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcHttpServiceTest {
 
-  private final String specFileName;
+    private final String specFileName;
 
-  public EthGraphQLRpcHttpBySpecErrorCaseTest(final String specFileName) {
-    this.specFileName = specFileName;
-  }
+    public EthGraphQLRpcHttpBySpecErrorCaseTest(final String specFileName) {
+        this.specFileName = specFileName;
+    }
 
-  @Parameters(name = "{index}: {0}")
-  public static Collection<String> specs() {
-    final List<String> specs = new ArrayList<String>();
-    specs.add("eth_getBlockWrongParams");
-    specs.add("eth_getBlocksByWrongRange");
-    return specs;
-  }
+    @Parameters(name = "{index}: {0}")
+    public static Collection<String> specs() {
+        final List<String> specs = new ArrayList<String>();
+        specs.add("eth_getBlockWrongParams");
+        specs.add("eth_getBlocksByWrongRange");
+        specs.add("eth_getBalance_toobig_bn");
+        specs.add("eth_getBalance_without_addr");
+        return specs;
+    }
 
-  @Test
-  public void graphQLRPCCallWithSpecFile() throws Exception {
-    graphQLRPCCall(specFileName);
-  }
+    @Test
+    public void graphQLRPCCallWithSpecFile() throws Exception {
+        graphQLRPCCall(specFileName);
+    }
 
-  private void graphQLRPCCall(final String name) throws IOException {
-    final String testSpecFile = name + ".json";
-    final String json =
-        Resources.toString(
-            EthGraphQLRpcHttpBySpecTest.class.getResource(testSpecFile), Charsets.UTF_8);
-    final JsonObject spec = new JsonObject(json);
+    private void graphQLRPCCall(final String name) throws IOException {
+        final String testSpecFile = name + ".json";
+        final String json = Resources.toString(EthGraphQLRpcHttpBySpecTest.class.getResource(testSpecFile),
+                Charsets.UTF_8);
+        final JsonObject spec = new JsonObject(json);
 
-    final String rawRequestBody = spec.getString("request");
-    final RequestBody requestBody = RequestBody.create(JSON, rawRequestBody);
-    final Request request = new Request.Builder().post(requestBody).url(baseUrl).build();
+        final String rawRequestBody = spec.getString("request");
+        final RequestBody requestBody = RequestBody.create(JSON, rawRequestBody);
+        final Request request = new Request.Builder().post(requestBody).url(baseUrl).build();
 
-    importBlocks(1, BLOCKS.size());
-    try (final Response resp = client.newCall(request).execute()) {
-      final int expectedStatusCode = spec.getInteger("statusCode");
-      final String resultStr = resp.body().string();
-      System.out.println(resultStr);
-      assertThat(resp.code()).isEqualTo(expectedStatusCode);
-      try {
-        final JsonObject expectedRespBody = spec.getJsonObject("response");
-        final JsonObject result = new JsonObject(resultStr);
-        if (expectedRespBody != null) {
-          System.out.println("hereeeeeeeeeeeeee");
-          System.out.println(expectedRespBody.toString());
+        importBlocks(1, BLOCKS.size());
+        try (final Response resp = client.newCall(request).execute()) {
+            final int expectedStatusCode = spec.getInteger("statusCode");
+            final String resultStr = resp.body().string();
+            System.out.println(resultStr);
+            assertThat(resp.code()).isEqualTo(expectedStatusCode);
+            try {
+                final JsonObject expectedRespBody = spec.getJsonObject("response");
+                final JsonObject result = new JsonObject(resultStr);
+                if (expectedRespBody != null) {
 
-          assertThat(result).isEqualTo(expectedRespBody);
+                    System.out.println(expectedRespBody.toString());
+
+                    assertThat(result).isEqualTo(expectedRespBody);
+                }
+            } catch (IllegalStateException e) {
+                System.out.println(e);
+            }
         }
-      } catch (IllegalStateException e) {
-        System.out.println(e);
-      }
     }
-  }
 
-  private void importBlocks(final int from, final int to) {
-    for (int i = from; i < to; ++i) {
-      importBlock(i);
+    private void importBlocks(final int from, final int to) {
+        for (int i = from; i < to; ++i) {
+            importBlock(i);
+        }
     }
-  }
 }
