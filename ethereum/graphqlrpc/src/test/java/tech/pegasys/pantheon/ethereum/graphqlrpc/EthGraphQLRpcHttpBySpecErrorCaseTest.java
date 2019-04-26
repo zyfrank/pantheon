@@ -66,8 +66,21 @@ public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcH
     importBlocks(1, BLOCKS.size());
     try (final Response resp = client.newCall(request).execute()) {
       final int expectedStatusCode = spec.getInteger("statusCode");
-      System.out.println(resp.body().string());
+      final String resultStr = resp.body().string();
+      System.out.println(resultStr);
       assertThat(resp.code()).isEqualTo(expectedStatusCode);
+      try {
+        final JsonObject expectedRespBody = spec.getJsonObject("response");
+        final JsonObject result = new JsonObject(resultStr);
+        if (expectedRespBody != null) {
+          System.out.println("hereeeeeeeeeeeeee");
+          System.out.println(expectedRespBody.toString());
+
+          assertThat(result).isEqualTo(expectedRespBody);
+        }
+      } catch (IllegalStateException e) {
+        System.out.println(e);
+      }
     }
   }
 
