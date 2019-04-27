@@ -13,7 +13,6 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Streams.stream;
 import static tech.pegasys.pantheon.util.NetworkUtility.urlForSocketAddress;
 
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcErrorResponse;
@@ -28,19 +27,14 @@ import java.net.SocketException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLError;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -51,7 +45,6 @@ import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.CorsHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -119,15 +112,6 @@ public class GraphQLRpcHttpService {
     // Handle graphql rpc requests
     final Router router = Router.router(vertx);
 
-    // Verify Host header to avoid rebind attack.
-    router.route().handler(checkWhitelistHostHeader());
-
-    router
-        .route()
-        .handler(
-            CorsHandler.create(buildCorsRegexFromConfig())
-                .allowedHeader("*")
-                .allowedHeader("content-type"));
     router
         .route()
         .handler(
@@ -168,40 +152,6 @@ public class GraphQLRpcHttpService {
             });
 
     return resultFuture;
-  }
-
-  private Handler<RoutingContext> checkWhitelistHostHeader() {
-    return event -> {
-      final Optional<String> hostHeader = getAndValidateHostHeader(event);
-      if (config.getHostsWhitelist().contains("*")
-          || (hostHeader.isPresent() && hostIsInWhitelist(hostHeader.get()))) {
-        event.next();
-      } else {
-        event
-            .response()
-            .setStatusCode(403)
-            .putHeader("Content-Type", "application/json; charset=utf-8")
-            .end("{\"message\":\"Host not authorized.\"}");
-      }
-    };
-  }
-
-  private Optional<String> getAndValidateHostHeader(final RoutingContext event) {
-    final Iterable<String> splitHostHeader = Splitter.on(':').split(event.request().host());
-    final long hostPieces = stream(splitHostHeader).count();
-    if (hostPieces > 1) {
-      // If the host contains a colon, verify the host is correctly formed - host [
-      // ":" port ]
-      if (hostPieces > 2 || !Iterables.get(splitHostHeader, 1).matches("\\d{1,5}+")) {
-        return Optional.empty();
-      }
-    }
-    return Optional.ofNullable(Iterables.get(splitHostHeader, 0));
-  }
-
-  private boolean hostIsInWhitelist(final String hostHeader) {
-    return config.getHostsWhitelist().stream()
-        .anyMatch(whitelistEntry -> whitelistEntry.toLowerCase().equals(hostHeader.toLowerCase()));
   }
 
   public CompletableFuture<?> stop() {
@@ -297,10 +247,6 @@ public class GraphQLRpcHttpService {
     return Json.encodePrettily(response.getResult());
   }
 
-  /*
-   * private boolean isNonEmptyResponses(final GraphQLRpcResponse result) { return
-   * result.getType() != GraphQLRpcResponseType.NONE; }
-   */
   private GraphQLRpcResponse process(final String requestJson) {
     ExecutionInput executionInput =
         ExecutionInput.newExecutionInput().query(requestJson).context(dataFetcherContext).build();
@@ -319,22 +265,5 @@ public class GraphQLRpcHttpService {
         .response()
         .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
         .end(Json.encode(new GraphQLRpcErrorResponse(errors)));
-  }
-
-  /*
-   * private GraphQLRpcResponse errorResponse(final Object id, final
-   * GraphQLRpcError error) { return new GraphQLRpcErrorResponse(id, error); }
-   */
-  private String buildCorsRegexFromConfig() {
-    if (config.getCorsAllowedDomains().isEmpty()) {
-      return "";
-    }
-    if (config.getCorsAllowedDomains().contains("*")) {
-      return "*";
-    } else {
-      final StringJoiner stringJoiner = new StringJoiner("|");
-      config.getCorsAllowedDomains().stream().filter(s -> !s.isEmpty()).forEach(stringJoiner::add);
-      return stringJoiner.toString();
-    }
   }
 }

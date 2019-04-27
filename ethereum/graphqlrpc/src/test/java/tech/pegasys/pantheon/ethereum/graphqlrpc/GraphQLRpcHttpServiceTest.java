@@ -40,7 +40,6 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -143,7 +142,6 @@ public class GraphQLRpcHttpServiceTest {
   private static GraphQLRpcConfiguration createGraphQLRpcConfig() {
     final GraphQLRpcConfiguration config = GraphQLRpcConfiguration.createDefault();
     config.setPort(0);
-    config.setHostsWhitelist(Collections.singletonList("*"));
     return config;
   }
 

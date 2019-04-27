@@ -328,7 +328,6 @@ public final class RunnerTest {
     final GraphQLRpcConfiguration configuration = GraphQLRpcConfiguration.createDefault();
     configuration.setPort(0);
     configuration.setEnabled(true);
-    configuration.setHostsWhitelist(Collections.singletonList("*"));
     return configuration;
   }
 
