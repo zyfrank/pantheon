@@ -370,6 +370,7 @@ public class RunnerBuilder {
             context.getBlockchain(),
             context.getWorldStateArchive(),
             protocolSchedule,
+            transactionPool,
             miningCoordinator,
             synchronizer);
     GraphQL graphQL = null;

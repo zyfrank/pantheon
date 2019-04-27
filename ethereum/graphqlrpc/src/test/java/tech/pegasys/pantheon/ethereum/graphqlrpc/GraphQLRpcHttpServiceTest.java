@@ -26,6 +26,7 @@ import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.core.Wei;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
+import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.mainnet.MainnetBlockHashFunction;
 import tech.pegasys.pantheon.ethereum.mainnet.MainnetProtocolSchedule;
@@ -105,7 +106,12 @@ public class GraphQLRpcHttpServiceTest {
     miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
     dataFetcherContext =
         new GraphQLDataFetcherContext(
-            blockchain, stateArchive, PROTOCOL_SCHEDULE, miningCoordinatorMock, synchronizer);
+            blockchain,
+            stateArchive,
+            PROTOCOL_SCHEDULE,
+            mock(TransactionPool.class),
+            miningCoordinatorMock,
+            synchronizer);
     final Set<Capability> supportedCapabilities = new HashSet<>();
     supportedCapabilities.add(EthProtocol.ETH62);
     supportedCapabilities.add(EthProtocol.ETH63);

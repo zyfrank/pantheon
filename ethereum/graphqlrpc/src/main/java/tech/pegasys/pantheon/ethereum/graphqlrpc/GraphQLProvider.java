@@ -69,6 +69,10 @@ public class GraphQLProvider {
                 .dataFetcher("syncing", graphQLDataFetchers.getSyncingDataFetcher())
                 .dataFetcher(
                     "protocolVersion", graphQLDataFetchers.getProtocolVersionDataFetcher()))
+        .type(
+            newTypeWiring("Mutation")
+                .dataFetcher(
+                    "sendRawTransaction", graphQLDataFetchers.getSendRawTransactionDataFetcher()))
         .build();
   }
 }

@@ -26,6 +26,7 @@ import tech.pegasys.pantheon.ethereum.chain.MutableBlockchain;
 import tech.pegasys.pantheon.ethereum.core.Block;
 import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.BlockImporter;
+import tech.pegasys.pantheon.ethereum.core.SyncStatus;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.core.Transaction;
 import tech.pegasys.pantheon.ethereum.core.Wei;
@@ -50,6 +51,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.base.Charsets;
@@ -137,13 +139,17 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
   @Before
   public void setupTest() throws Exception {
     final Synchronizer synchronizerMock = mock(Synchronizer.class);
-    // final P2PNetwork peerDiscoveryMock = mock(P2PNetwork.class);
-    final TransactionPool transactionPoolMock = mock(TransactionPool.class);
-    when(transactionPoolMock.addLocalTransaction(any(Transaction.class)))
-        .thenReturn(ValidationResult.valid());
+    final SyncStatus status = new SyncStatus(1, 2, 3);
+    when(synchronizerMock.getSyncStatus()).thenReturn(Optional.of(status));
+
     final EthHashMiningCoordinator miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
     when(miningCoordinatorMock.getMinTransactionGasPrice()).thenReturn(Wei.of(16));
 
+    final TransactionPool transactionPoolMock = mock(TransactionPool.class);
+    // final EthHashMiningCoordinator miningCoordinatorMock =
+    // mock(EthHashMiningCoordinator.class);
+    when(transactionPoolMock.addLocalTransaction(any(Transaction.class)))
+        .thenReturn(ValidationResult.valid());
     final PendingTransactions pendingTransactionsMock = mock(PendingTransactions.class);
     when(transactionPoolMock.getPendingTransactions()).thenReturn(pendingTransactionsMock);
     // final PrivacyParameters privacyParameters = mock(PrivacyParameters.class);
@@ -170,7 +176,12 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
     config.setPort(0);
     final GraphQLDataFetcherContext dataFetcherContext =
         new GraphQLDataFetcherContext(
-            blockchain, stateArchive, PROTOCOL_SCHEDULE, miningCoordinatorMock, synchronizerMock);
+            blockchain,
+            stateArchive,
+            PROTOCOL_SCHEDULE,
+            transactionPoolMock,
+            miningCoordinatorMock,
+            synchronizerMock);
 
     final GraphQLDataFetchers dataFetchers = new GraphQLDataFetchers(supportedCapabilities);
     final GraphQL graphQL = GraphQLProvider.buildGraphQL(dataFetchers);

@@ -76,6 +76,9 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
 
     specs.add("eth_getTransactionReceipt");
 
+    specs.add("eth_syncing");
+    specs.add("eth_sendRawTransaction_contractCreation");
+
     return specs;
   }
 

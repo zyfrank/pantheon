@@ -19,7 +19,9 @@ import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.SyncStatus;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
+import tech.pegasys.pantheon.ethereum.core.Transaction;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
+import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
@@ -28,8 +30,13 @@ import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.BlockAdapt
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.SyncStateAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.TransactionAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcError;
+import tech.pegasys.pantheon.ethereum.mainnet.TransactionValidator.TransactionInvalidReason;
+import tech.pegasys.pantheon.ethereum.mainnet.ValidationResult;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
+import tech.pegasys.pantheon.ethereum.rlp.RLP;
+import tech.pegasys.pantheon.ethereum.rlp.RLPException;
 import tech.pegasys.pantheon.util.bytes.Bytes32;
+import tech.pegasys.pantheon.util.bytes.BytesValue;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
 import java.util.ArrayList;
@@ -56,6 +63,26 @@ public class GraphQLDataFetchers {
   public DataFetcher<Optional<Integer>> getProtocolVersionDataFetcher() {
     return dataFetchingEnvironment -> {
       return Optional.of(highestEthVersion);
+    };
+  }
+
+  public DataFetcher<Optional<Bytes32>> getSendRawTransactionDataFetcher() {
+    return dataFetchingEnvironment -> {
+      try {
+        TransactionPool transactionPool =
+            ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getTransactionPool();
+        BytesValue rawTran = (BytesValue) dataFetchingEnvironment.getArgument("data");
+
+        Transaction transaction = Transaction.readFrom(RLP.input(rawTran));
+        final ValidationResult<TransactionInvalidReason> validationResult =
+            transactionPool.addLocalTransaction(transaction);
+        if (validationResult.isValid()) {
+          return Optional.of(transaction.hash());
+        }
+      } catch (final IllegalArgumentException | RLPException e) {
+        throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+      }
+      throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
     };
   }
 

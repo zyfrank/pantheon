@@ -37,10 +37,13 @@ public class SyncStateAdapter {
     return Optional.of(UnsignedLong.valueOf(syncStatus.getHighestBlock()));
   }
 
-  /*
-   * # PulledStates is the number of state entries fetched so far, or null # if
-   * this is not known or not relevant. pulledStates: Long # KnownStates is the
-   * number of states the node knows of so far, or null # if this is not known or
-   * not relevant. knownStates: Long
-   */
+  public Optional<UnsignedLong> getPulledStates() {
+    // currently synchronizer has no this information?
+    return Optional.empty();
+  }
+
+  public Optional<UnsignedLong> getKnownStates() {
+    // currently synchronizer has no this information?
+    return Optional.empty();
+  }
 }

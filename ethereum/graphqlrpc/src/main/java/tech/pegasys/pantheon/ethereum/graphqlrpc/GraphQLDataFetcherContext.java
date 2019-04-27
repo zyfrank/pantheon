@@ -15,6 +15,7 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc;
 import tech.pegasys.pantheon.ethereum.blockcreation.MiningCoordinator;
 import tech.pegasys.pantheon.ethereum.chain.Blockchain;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
+import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.mainnet.ProtocolSchedule;
 import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
@@ -25,17 +26,24 @@ public class GraphQLDataFetcherContext {
   private MiningCoordinator miningCoordinator;
   private Synchronizer synchronizer;
   private ProtocolSchedule<?> protocolSchedule;
+  private TransactionPool transactionPool;
 
   public GraphQLDataFetcherContext(
       final Blockchain blockchain,
       final WorldStateArchive worldStateArchive,
       final ProtocolSchedule<?> protocolSchedule,
+      final TransactionPool transactionPool,
       final MiningCoordinator miningCoordinator,
       final Synchronizer synchronizer) {
     this.blockchain = new BlockchainQuery(blockchain, worldStateArchive);
     this.protocolSchedule = protocolSchedule;
     this.miningCoordinator = miningCoordinator;
     this.synchronizer = synchronizer;
+    this.transactionPool = transactionPool;
+  }
+
+  public TransactionPool getTransactionPool() {
+    return transactionPool;
   }
 
   public BlockchainQuery getBlockchainQuery() {
