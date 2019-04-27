@@ -46,6 +46,7 @@ public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcH
     specs.add("eth_getBlocksByWrongRange");
     specs.add("eth_getBalance_toobig_bn");
     specs.add("eth_getBalance_without_addr");
+
     return specs;
   }
 

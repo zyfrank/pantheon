@@ -141,8 +141,8 @@ public class BlockAdapter extends AdapterBase {
     BlockchainQuery query = getBlockchainQuery(environment);
     int index = environment.getArgument("index");
     List<Hash> ommers = blockWithMetaData.getOmmers();
-    Hash ommer = ommers.get(index);
-    if (ommer != null) {
+    if (ommers.size() > index) {
+      Hash ommer = ommers.get(index);
       Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block = query.blockByHash(ommer);
       return block.map(item -> new BlockAdapter(item));
     }
@@ -165,10 +165,11 @@ public class BlockAdapter extends AdapterBase {
   public Optional<TransactionAdapter> getTransactionAt(final DataFetchingEnvironment environment) {
     int index = environment.getArgument("index");
     List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
-    TransactionWithMetadata tran = trans.get(index);
-    if (tran != null) {
-      return Optional.of(new TransactionAdapter(tran));
+
+    if (trans.size() > index) {
+      return Optional.of(new TransactionAdapter(trans.get(index)));
     }
+
     return Optional.empty();
   }
 
