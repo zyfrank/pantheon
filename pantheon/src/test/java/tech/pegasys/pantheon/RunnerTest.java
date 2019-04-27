@@ -34,6 +34,7 @@ import tech.pegasys.pantheon.ethereum.eth.EthereumWireProtocolConfiguration;
 import tech.pegasys.pantheon.ethereum.eth.sync.SyncMode;
 import tech.pegasys.pantheon.ethereum.eth.sync.SynchronizerConfiguration;
 import tech.pegasys.pantheon.ethereum.eth.transactions.PendingTransactions;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLRpcConfiguration;
 import tech.pegasys.pantheon.ethereum.jsonrpc.JsonRpcConfiguration;
 import tech.pegasys.pantheon.ethereum.jsonrpc.websocket.WebSocketConfiguration;
 import tech.pegasys.pantheon.ethereum.mainnet.HeaderValidationMode;
@@ -135,6 +136,7 @@ public final class RunnerTest {
             .build();
     final String listenHost = InetAddress.getLoopbackAddress().getHostAddress();
     final JsonRpcConfiguration aheadJsonRpcConfiguration = jsonRpcConfiguration();
+    final GraphQLRpcConfiguration aheadGraphQLRpcConfiguration = graphQLRpcConfiguration();
     final WebSocketConfiguration aheadWebSocketConfiguration = wsRpcConfiguration();
     final MetricsConfiguration aheadMetricsConfiguration = metricsConfiguration();
     final RunnerBuilder runnerBuilder =
@@ -154,6 +156,7 @@ public final class RunnerTest {
             .pantheonController(controllerAhead)
             .ethNetworkConfig(EthNetworkConfig.getNetworkConfig(DEV))
             .jsonRpcConfiguration(aheadJsonRpcConfiguration)
+            .graphQLRpcConfiguration(aheadGraphQLRpcConfiguration)
             .webSocketConfiguration(aheadWebSocketConfiguration)
             .metricsConfiguration(aheadMetricsConfiguration)
             .dataDir(dbAhead)
@@ -170,6 +173,7 @@ public final class RunnerTest {
               .build();
       final Path dataDirBehind = temp.newFolder().toPath();
       final JsonRpcConfiguration behindJsonRpcConfiguration = jsonRpcConfiguration();
+      final GraphQLRpcConfiguration behindGraphQLRpcConfiguration = graphQLRpcConfiguration();
       final WebSocketConfiguration behindWebSocketConfiguration = wsRpcConfiguration();
       final MetricsConfiguration behindMetricsConfiguration = metricsConfiguration();
 
@@ -200,6 +204,7 @@ public final class RunnerTest {
               .pantheonController(controllerBehind)
               .ethNetworkConfig(behindEthNetworkConfiguration)
               .jsonRpcConfiguration(behindJsonRpcConfiguration)
+              .graphQLRpcConfiguration(behindGraphQLRpcConfiguration)
               .webSocketConfiguration(behindWebSocketConfiguration)
               .metricsConfiguration(behindMetricsConfiguration)
               .dataDir(temp.newFolder().toPath())
@@ -313,6 +318,14 @@ public final class RunnerTest {
 
   private JsonRpcConfiguration jsonRpcConfiguration() {
     final JsonRpcConfiguration configuration = JsonRpcConfiguration.createDefault();
+    configuration.setPort(0);
+    configuration.setEnabled(true);
+    configuration.setHostsWhitelist(Collections.singletonList("*"));
+    return configuration;
+  }
+
+  private GraphQLRpcConfiguration graphQLRpcConfiguration() {
+    final GraphQLRpcConfiguration configuration = GraphQLRpcConfiguration.createDefault();
     configuration.setPort(0);
     configuration.setEnabled(true);
     configuration.setHostsWhitelist(Collections.singletonList("*"));

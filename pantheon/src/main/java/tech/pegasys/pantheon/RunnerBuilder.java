@@ -113,7 +113,11 @@ public class RunnerBuilder {
 
   private EnodeURL getSelfEnode() {
     BytesValue nodeId = pantheonController.getLocalNodeKeyPair().getPublicKey().getEncodedBytes();
-    return EnodeURL.builder().nodeId(nodeId).ipAddress(p2pAdvertisedHost).listeningPort(p2pListenPort).build();
+    return EnodeURL.builder()
+        .nodeId(nodeId)
+        .ipAddress(p2pAdvertisedHost)
+        .listeningPort(p2pListenPort)
+        .build();
   }
 
   public RunnerBuilder vertx(final Vertx vertx) {
@@ -161,7 +165,8 @@ public class RunnerBuilder {
     return this;
   }
 
-  public RunnerBuilder graphQLRpcConfiguration(final GraphQLRpcConfiguration graphQLRpcConfiguration) {
+  public RunnerBuilder graphQLRpcConfiguration(
+      final GraphQLRpcConfiguration graphQLRpcConfiguration) {
     this.graphQLRpcConfiguration = graphQLRpcConfiguration;
     return this;
   }
@@ -171,7 +176,8 @@ public class RunnerBuilder {
     return this;
   }
 
-  public RunnerBuilder permissioningConfiguration(final PermissioningConfiguration permissioningConfiguration) {
+  public RunnerBuilder permissioningConfiguration(
+      final PermissioningConfiguration permissioningConfiguration) {
     this.permissioningConfiguration = Optional.of(permissioningConfiguration);
     return this;
   }
@@ -213,98 +219,159 @@ public class RunnerBuilder {
       } else {
         bootstrap = ethNetworkConfig.getBootNodes();
       }
-      discoveryConfiguration = DiscoveryConfiguration.create().setBindPort(p2pListenPort)
-          .setAdvertisedHost(p2pAdvertisedHost).setBootstrapPeers(bootstrap);
+      discoveryConfiguration =
+          DiscoveryConfiguration.create()
+              .setBindPort(p2pListenPort)
+              .setAdvertisedHost(p2pAdvertisedHost)
+              .setBootstrapPeers(bootstrap);
     } else {
       discoveryConfiguration = DiscoveryConfiguration.create().setActive(false);
     }
 
     final KeyPair keyPair = pantheonController.getLocalNodeKeyPair();
 
-    final SubProtocolConfiguration subProtocolConfiguration = pantheonController.getSubProtocolConfiguration();
+    final SubProtocolConfiguration subProtocolConfiguration =
+        pantheonController.getSubProtocolConfiguration();
 
     final ProtocolSchedule<?> protocolSchedule = pantheonController.getProtocolSchedule();
     final ProtocolContext<?> context = pantheonController.getProtocolContext();
 
     final List<SubProtocol> subProtocols = subProtocolConfiguration.getSubProtocols();
     final List<ProtocolManager> protocolManagers = subProtocolConfiguration.getProtocolManagers();
-    final Set<Capability> supportedCapabilities = protocolManagers.stream()
-        .flatMap(protocolManager -> protocolManager.getSupportedCapabilities().stream()).collect(Collectors.toSet());
+    final Set<Capability> supportedCapabilities =
+        protocolManagers.stream()
+            .flatMap(protocolManager -> protocolManager.getSupportedCapabilities().stream())
+            .collect(Collectors.toSet());
 
-    final NetworkingConfiguration networkConfig = new NetworkingConfiguration()
-        .setRlpx(RlpxConfiguration.create().setBindPort(p2pListenPort).setMaxPeers(maxPeers))
-        .setDiscovery(discoveryConfiguration).setClientId(PantheonInfo.version()).setSupportedProtocols(subProtocols);
+    final NetworkingConfiguration networkConfig =
+        new NetworkingConfiguration()
+            .setRlpx(RlpxConfiguration.create().setBindPort(p2pListenPort).setMaxPeers(maxPeers))
+            .setDiscovery(discoveryConfiguration)
+            .setClientId(PantheonInfo.version())
+            .setSupportedProtocols(subProtocols);
 
-    final PeerBlacklist peerBlacklist = new PeerBlacklist(
-        bannedNodeIds.stream().map(BytesValue::fromHexString).collect(Collectors.toSet()));
+    final PeerBlacklist peerBlacklist =
+        new PeerBlacklist(
+            bannedNodeIds.stream().map(BytesValue::fromHexString).collect(Collectors.toSet()));
 
-    final List<EnodeURL> bootnodesAsEnodeURLs = discoveryConfiguration.getBootstrapPeers().stream()
-        .map(p -> EnodeURL.fromString(p.getEnodeURLString())).collect(Collectors.toList());
+    final List<EnodeURL> bootnodesAsEnodeURLs =
+        discoveryConfiguration.getBootstrapPeers().stream()
+            .map(p -> EnodeURL.fromString(p.getEnodeURLString()))
+            .collect(Collectors.toList());
 
-    final Optional<LocalPermissioningConfiguration> localPermissioningConfiguration = permissioningConfiguration
-        .flatMap(PermissioningConfiguration::getLocalConfig);
+    final Optional<LocalPermissioningConfiguration> localPermissioningConfiguration =
+        permissioningConfiguration.flatMap(PermissioningConfiguration::getLocalConfig);
 
     final Synchronizer synchronizer = pantheonController.getSynchronizer();
 
-    final TransactionSimulator transactionSimulator = new TransactionSimulator(context.getBlockchain(),
-        context.getWorldStateArchive(), protocolSchedule);
+    final TransactionSimulator transactionSimulator =
+        new TransactionSimulator(
+            context.getBlockchain(), context.getWorldStateArchive(), protocolSchedule);
 
-    final Optional<NodePermissioningController> nodePermissioningController = buildNodePermissioningController(
-        bootnodesAsEnodeURLs, synchronizer, transactionSimulator);
+    final Optional<NodePermissioningController> nodePermissioningController =
+        buildNodePermissioningController(bootnodesAsEnodeURLs, synchronizer, transactionSimulator);
 
-    final Optional<NodeLocalConfigPermissioningController> nodeWhitelistController = nodePermissioningController
-        .flatMap(
-            n -> n.getProviders().stream().filter(p -> p instanceof NodeLocalConfigPermissioningController).findFirst())
-        .map(n -> (NodeLocalConfigPermissioningController) n);
+    final Optional<NodeLocalConfigPermissioningController> nodeWhitelistController =
+        nodePermissioningController
+            .flatMap(
+                n ->
+                    n.getProviders().stream()
+                        .filter(p -> p instanceof NodeLocalConfigPermissioningController)
+                        .findFirst())
+            .map(n -> (NodeLocalConfigPermissioningController) n);
 
-    final NetworkRunner networkRunner = NetworkRunner.builder().protocolManagers(protocolManagers)
-        .subProtocols(subProtocols)
-        .network(p2pEnabled
-            ? caps -> new NettyP2PNetwork(vertx, keyPair, networkConfig, caps, peerBlacklist, metricsSystem,
-                nodeWhitelistController, nodePermissioningController,
-                // TODO this dependency on the Blockchain will be removed in PAN-2442
-                nodePermissioningController.isPresent() ? context.getBlockchain() : null)
-            : caps -> new NoopP2PNetwork())
-        .metricsSystem(metricsSystem).build();
+    final NetworkRunner networkRunner =
+        NetworkRunner.builder()
+            .protocolManagers(protocolManagers)
+            .subProtocols(subProtocols)
+            .network(
+                p2pEnabled
+                    ? caps ->
+                        new NettyP2PNetwork(
+                            vertx,
+                            keyPair,
+                            networkConfig,
+                            caps,
+                            peerBlacklist,
+                            metricsSystem,
+                            nodeWhitelistController,
+                            nodePermissioningController,
+                            // TODO this dependency on the Blockchain will be removed in PAN-2442
+                            nodePermissioningController.isPresent()
+                                ? context.getBlockchain()
+                                : null)
+                    : caps -> new NoopP2PNetwork())
+            .metricsSystem(metricsSystem)
+            .build();
 
-    nodePermissioningController.ifPresent(n -> n.setInsufficientPeersPermissioningProvider(
-        new InsufficientPeersPermissioningProvider(networkRunner.getNetwork(), getSelfEnode(), bootnodesAsEnodeURLs)));
+    nodePermissioningController.ifPresent(
+        n ->
+            n.setInsufficientPeersPermissioningProvider(
+                new InsufficientPeersPermissioningProvider(
+                    networkRunner.getNetwork(), getSelfEnode(), bootnodesAsEnodeURLs)));
 
     final TransactionPool transactionPool = pantheonController.getTransactionPool();
     final MiningCoordinator miningCoordinator = pantheonController.getMiningCoordinator();
-    final Optional<AccountWhitelistController> accountWhitelistController = localPermissioningConfiguration
-        .filter(LocalPermissioningConfiguration::isAccountWhitelistEnabled).map(configuration -> {
-          final AccountWhitelistController whitelistController = new AccountWhitelistController(configuration);
-          transactionPool.setAccountFilter(whitelistController::contains);
-          return whitelistController;
-        });
+    final Optional<AccountWhitelistController> accountWhitelistController =
+        localPermissioningConfiguration
+            .filter(LocalPermissioningConfiguration::isAccountWhitelistEnabled)
+            .map(
+                configuration -> {
+                  final AccountWhitelistController whitelistController =
+                      new AccountWhitelistController(configuration);
+                  transactionPool.setAccountFilter(whitelistController::contains);
+                  return whitelistController;
+                });
 
     final PrivacyParameters privacyParameters = pantheonController.getPrivacyParameters();
     final FilterManager filterManager = createFilterManager(vertx, context, transactionPool);
 
     final P2PNetwork peerNetwork = networkRunner.getNetwork();
 
-    staticNodes.forEach(enodeURL -> {
-      final Peer peer = DefaultPeer.fromEnodeURL(enodeURL);
-      try {
-        peerNetwork.addMaintainConnectionPeer(peer);
-      } catch (ConnectingToLocalNodeException ex) {
-      }
-    });
+    staticNodes.forEach(
+        enodeURL -> {
+          final Peer peer = DefaultPeer.fromEnodeURL(enodeURL);
+          try {
+            peerNetwork.addMaintainConnectionPeer(peer);
+          } catch (ConnectingToLocalNodeException ex) {
+          }
+        });
 
     Optional<JsonRpcHttpService> jsonRpcHttpService = Optional.empty();
     if (jsonRpcConfiguration.isEnabled()) {
-      final Map<String, JsonRpcMethod> jsonRpcMethods = jsonRpcMethods(context, protocolSchedule, pantheonController,
-          peerNetwork, synchronizer, transactionPool, miningCoordinator, metricsSystem, supportedCapabilities,
-          jsonRpcConfiguration.getRpcApis(), filterManager, accountWhitelistController, nodeWhitelistController,
-          privacyParameters, jsonRpcConfiguration, webSocketConfiguration, metricsConfiguration);
-      jsonRpcHttpService = Optional
-          .of(new JsonRpcHttpService(vertx, dataDir, jsonRpcConfiguration, metricsSystem, jsonRpcMethods));
+      final Map<String, JsonRpcMethod> jsonRpcMethods =
+          jsonRpcMethods(
+              context,
+              protocolSchedule,
+              pantheonController,
+              peerNetwork,
+              synchronizer,
+              transactionPool,
+              miningCoordinator,
+              metricsSystem,
+              supportedCapabilities,
+              jsonRpcConfiguration.getRpcApis(),
+              filterManager,
+              accountWhitelistController,
+              nodeWhitelistController,
+              privacyParameters,
+              jsonRpcConfiguration,
+              webSocketConfiguration,
+              metricsConfiguration);
+      jsonRpcHttpService =
+          Optional.of(
+              new JsonRpcHttpService(
+                  vertx, dataDir, jsonRpcConfiguration, metricsSystem, jsonRpcMethods));
     }
 
     GraphQLDataFetchers fetchers = new GraphQLDataFetchers(supportedCapabilities);
-    GraphQLDataFetcherContext dataFetcherContext = new GraphQLDataFetcherContext(context.getBlockchain(),
-        context.getWorldStateArchive(), protocolSchedule, miningCoordinator, synchronizer);
+    GraphQLDataFetcherContext dataFetcherContext =
+        new GraphQLDataFetcherContext(
+            context.getBlockchain(),
+            context.getWorldStateArchive(),
+            protocolSchedule,
+            miningCoordinator,
+            synchronizer);
     GraphQL graphQL = null;
     try {
       graphQL = GraphQLProvider.buildGraphQL(fetchers);
@@ -314,29 +381,54 @@ public class RunnerBuilder {
 
     Optional<GraphQLRpcHttpService> graphQLRpcHttpService = Optional.empty();
     if (graphQLRpcConfiguration.isEnabled()) {
-      graphQLRpcHttpService = Optional.of(new GraphQLRpcHttpService(vertx, dataDir,
-          GraphQLRpcConfiguration.createDefault(), graphQL, dataFetcherContext, metricsSystem));
+      graphQLRpcHttpService =
+          Optional.of(
+              new GraphQLRpcHttpService(
+                  vertx,
+                  dataDir,
+                  GraphQLRpcConfiguration.createDefault(),
+                  graphQL,
+                  dataFetcherContext,
+                  metricsSystem));
     }
 
     Optional<WebSocketService> webSocketService = Optional.empty();
     if (webSocketConfiguration.isEnabled()) {
-      final Map<String, JsonRpcMethod> webSocketsJsonRpcMethods = jsonRpcMethods(context, protocolSchedule,
-          pantheonController, peerNetwork, synchronizer, transactionPool, miningCoordinator, metricsSystem,
-          supportedCapabilities, webSocketConfiguration.getRpcApis(), filterManager, accountWhitelistController,
-          nodeWhitelistController, privacyParameters, jsonRpcConfiguration, webSocketConfiguration,
-          metricsConfiguration);
+      final Map<String, JsonRpcMethod> webSocketsJsonRpcMethods =
+          jsonRpcMethods(
+              context,
+              protocolSchedule,
+              pantheonController,
+              peerNetwork,
+              synchronizer,
+              transactionPool,
+              miningCoordinator,
+              metricsSystem,
+              supportedCapabilities,
+              webSocketConfiguration.getRpcApis(),
+              filterManager,
+              accountWhitelistController,
+              nodeWhitelistController,
+              privacyParameters,
+              jsonRpcConfiguration,
+              webSocketConfiguration,
+              metricsConfiguration);
 
-      final SubscriptionManager subscriptionManager = createSubscriptionManager(vertx, transactionPool);
+      final SubscriptionManager subscriptionManager =
+          createSubscriptionManager(vertx, transactionPool);
 
-      createLogsSubscriptionService(context.getBlockchain(), context.getWorldStateArchive(), subscriptionManager);
+      createLogsSubscriptionService(
+          context.getBlockchain(), context.getWorldStateArchive(), subscriptionManager);
 
-      createNewBlockHeadersSubscriptionService(context.getBlockchain(), context.getWorldStateArchive(),
-          subscriptionManager);
+      createNewBlockHeadersSubscriptionService(
+          context.getBlockchain(), context.getWorldStateArchive(), subscriptionManager);
 
       createSyncingSubscriptionService(synchronizer, subscriptionManager);
 
-      webSocketService = Optional
-          .of(createWebsocketService(vertx, webSocketConfiguration, subscriptionManager, webSocketsJsonRpcMethods));
+      webSocketService =
+          Optional.of(
+              createWebsocketService(
+                  vertx, webSocketConfiguration, subscriptionManager, webSocketsJsonRpcMethods));
     }
 
     Optional<MetricsService> metricsService = Optional.empty();
@@ -344,50 +436,96 @@ public class RunnerBuilder {
       metricsService = Optional.of(createMetricsService(vertx, metricsConfiguration));
     }
 
-    return new Runner(vertx, networkRunner, jsonRpcHttpService, graphQLRpcHttpService, webSocketService, metricsService,
-        pantheonController, dataDir);
+    return new Runner(
+        vertx,
+        networkRunner,
+        jsonRpcHttpService,
+        graphQLRpcHttpService,
+        webSocketService,
+        metricsService,
+        pantheonController,
+        dataDir);
   }
 
   private Optional<NodePermissioningController> buildNodePermissioningController(
-      final List<EnodeURL> bootnodesAsEnodeURLs, final Synchronizer synchronizer,
+      final List<EnodeURL> bootnodesAsEnodeURLs,
+      final Synchronizer synchronizer,
       final TransactionSimulator transactionSimulator) {
-    return permissioningConfiguration.map(config -> new NodePermissioningControllerFactory().create(config,
-        synchronizer, bootnodesAsEnodeURLs, getSelfEnode(), transactionSimulator));
+    return permissioningConfiguration.map(
+        config ->
+            new NodePermissioningControllerFactory()
+                .create(
+                    config,
+                    synchronizer,
+                    bootnodesAsEnodeURLs,
+                    getSelfEnode(),
+                    transactionSimulator));
   }
 
-  private FilterManager createFilterManager(final Vertx vertx, final ProtocolContext<?> context,
-      final TransactionPool transactionPool) {
-    final FilterManager filterManager = new FilterManager(
-        new BlockchainQueries(context.getBlockchain(), context.getWorldStateArchive()), transactionPool,
-        new FilterIdGenerator(), new FilterRepository());
+  private FilterManager createFilterManager(
+      final Vertx vertx, final ProtocolContext<?> context, final TransactionPool transactionPool) {
+    final FilterManager filterManager =
+        new FilterManager(
+            new BlockchainQueries(context.getBlockchain(), context.getWorldStateArchive()),
+            transactionPool,
+            new FilterIdGenerator(),
+            new FilterRepository());
     vertx.deployVerticle(filterManager);
     return filterManager;
   }
 
-  private Map<String, JsonRpcMethod> jsonRpcMethods(final ProtocolContext<?> context,
-      final ProtocolSchedule<?> protocolSchedule, final PantheonController<?> pantheonController,
-      final P2PNetwork network, final Synchronizer synchronizer, final TransactionPool transactionPool,
-      final MiningCoordinator miningCoordinator, final MetricsSystem metricsSystem,
-      final Set<Capability> supportedCapabilities, final Collection<RpcApi> jsonRpcApis,
-      final FilterManager filterManager, final Optional<AccountWhitelistController> accountWhitelistController,
+  private Map<String, JsonRpcMethod> jsonRpcMethods(
+      final ProtocolContext<?> context,
+      final ProtocolSchedule<?> protocolSchedule,
+      final PantheonController<?> pantheonController,
+      final P2PNetwork network,
+      final Synchronizer synchronizer,
+      final TransactionPool transactionPool,
+      final MiningCoordinator miningCoordinator,
+      final MetricsSystem metricsSystem,
+      final Set<Capability> supportedCapabilities,
+      final Collection<RpcApi> jsonRpcApis,
+      final FilterManager filterManager,
+      final Optional<AccountWhitelistController> accountWhitelistController,
       final Optional<NodeLocalConfigPermissioningController> nodeWhitelistController,
-      final PrivacyParameters privacyParameters, final JsonRpcConfiguration jsonRpcConfiguration,
-      final WebSocketConfiguration webSocketConfiguration, final MetricsConfiguration metricsConfiguration) {
-    final Map<String, JsonRpcMethod> methods = new JsonRpcMethodsFactory().methods(PantheonInfo.version(),
-        ethNetworkConfig.getNetworkId(), pantheonController.getGenesisConfigOptions(), network, context.getBlockchain(),
-        context.getWorldStateArchive(), synchronizer, transactionPool, protocolSchedule, miningCoordinator,
-        metricsSystem, supportedCapabilities, jsonRpcApis, filterManager, accountWhitelistController,
-        nodeWhitelistController, privacyParameters, jsonRpcConfiguration, webSocketConfiguration, metricsConfiguration);
+      final PrivacyParameters privacyParameters,
+      final JsonRpcConfiguration jsonRpcConfiguration,
+      final WebSocketConfiguration webSocketConfiguration,
+      final MetricsConfiguration metricsConfiguration) {
+    final Map<String, JsonRpcMethod> methods =
+        new JsonRpcMethodsFactory()
+            .methods(
+                PantheonInfo.version(),
+                ethNetworkConfig.getNetworkId(),
+                pantheonController.getGenesisConfigOptions(),
+                network,
+                context.getBlockchain(),
+                context.getWorldStateArchive(),
+                synchronizer,
+                transactionPool,
+                protocolSchedule,
+                miningCoordinator,
+                metricsSystem,
+                supportedCapabilities,
+                jsonRpcApis,
+                filterManager,
+                accountWhitelistController,
+                nodeWhitelistController,
+                privacyParameters,
+                jsonRpcConfiguration,
+                webSocketConfiguration,
+                metricsConfiguration);
     methods.putAll(pantheonController.getAdditionalJsonRpcMethods(jsonRpcApis));
     return methods;
   }
 
-  private SubscriptionManager createSubscriptionManager(final Vertx vertx, final TransactionPool transactionPool) {
+  private SubscriptionManager createSubscriptionManager(
+      final Vertx vertx, final TransactionPool transactionPool) {
     final SubscriptionManager subscriptionManager = new SubscriptionManager();
-    final PendingTransactionSubscriptionService pendingTransactions = new PendingTransactionSubscriptionService(
-        subscriptionManager);
-    final PendingTransactionDroppedSubscriptionService pendingTransactionsRemoved = new PendingTransactionDroppedSubscriptionService(
-        subscriptionManager);
+    final PendingTransactionSubscriptionService pendingTransactions =
+        new PendingTransactionSubscriptionService(subscriptionManager);
+    final PendingTransactionDroppedSubscriptionService pendingTransactionsRemoved =
+        new PendingTransactionDroppedSubscriptionService(subscriptionManager);
     transactionPool.addTransactionListener(pendingTransactions);
     transactionPool.addTransactionDroppedListener(pendingTransactionsRemoved);
     vertx.deployVerticle(subscriptionManager);
@@ -395,38 +533,48 @@ public class RunnerBuilder {
     return subscriptionManager;
   }
 
-  private void createLogsSubscriptionService(final Blockchain blockchain, final WorldStateArchive worldStateArchive,
+  private void createLogsSubscriptionService(
+      final Blockchain blockchain,
+      final WorldStateArchive worldStateArchive,
       final SubscriptionManager subscriptionManager) {
-    final LogsSubscriptionService logsSubscriptionService = new LogsSubscriptionService(subscriptionManager,
-        new BlockchainQueries(blockchain, worldStateArchive));
+    final LogsSubscriptionService logsSubscriptionService =
+        new LogsSubscriptionService(
+            subscriptionManager, new BlockchainQueries(blockchain, worldStateArchive));
 
     blockchain.observeBlockAdded(logsSubscriptionService);
   }
 
-  private void createSyncingSubscriptionService(final Synchronizer synchronizer,
-      final SubscriptionManager subscriptionManager) {
+  private void createSyncingSubscriptionService(
+      final Synchronizer synchronizer, final SubscriptionManager subscriptionManager) {
     new SyncingSubscriptionService(subscriptionManager, synchronizer);
   }
 
-  private void createNewBlockHeadersSubscriptionService(final Blockchain blockchain,
-      final WorldStateArchive worldStateArchive, final SubscriptionManager subscriptionManager) {
-    final NewBlockHeadersSubscriptionService newBlockHeadersSubscriptionService = new NewBlockHeadersSubscriptionService(
-        subscriptionManager, new BlockchainQueries(blockchain, worldStateArchive));
+  private void createNewBlockHeadersSubscriptionService(
+      final Blockchain blockchain,
+      final WorldStateArchive worldStateArchive,
+      final SubscriptionManager subscriptionManager) {
+    final NewBlockHeadersSubscriptionService newBlockHeadersSubscriptionService =
+        new NewBlockHeadersSubscriptionService(
+            subscriptionManager, new BlockchainQueries(blockchain, worldStateArchive));
 
     blockchain.observeBlockAdded(newBlockHeadersSubscriptionService);
   }
 
-  private WebSocketService createWebsocketService(final Vertx vertx, final WebSocketConfiguration configuration,
-      final SubscriptionManager subscriptionManager, final Map<String, JsonRpcMethod> jsonRpcMethods) {
-    final WebSocketMethodsFactory websocketMethodsFactory = new WebSocketMethodsFactory(subscriptionManager,
-        jsonRpcMethods);
-    final WebSocketRequestHandler websocketRequestHandler = new WebSocketRequestHandler(vertx,
-        websocketMethodsFactory.methods());
+  private WebSocketService createWebsocketService(
+      final Vertx vertx,
+      final WebSocketConfiguration configuration,
+      final SubscriptionManager subscriptionManager,
+      final Map<String, JsonRpcMethod> jsonRpcMethods) {
+    final WebSocketMethodsFactory websocketMethodsFactory =
+        new WebSocketMethodsFactory(subscriptionManager, jsonRpcMethods);
+    final WebSocketRequestHandler websocketRequestHandler =
+        new WebSocketRequestHandler(vertx, websocketMethodsFactory.methods());
 
     return new WebSocketService(vertx, configuration, websocketRequestHandler);
   }
 
-  private MetricsService createMetricsService(final Vertx vertx, final MetricsConfiguration configuration) {
+  private MetricsService createMetricsService(
+      final Vertx vertx, final MetricsConfiguration configuration) {
     return MetricsService.create(vertx, configuration, metricsSystem);
   }
 }
