@@ -76,8 +76,9 @@ public class GraphQLRpcHttpService {
    * @param vertx The vertx process that will be running this service
    * @param dataDir The data directory where requests can be buffered
    * @param config Configuration for the rpc methods being loaded
+   * @param graphQL GraphQL engine
+   * @param dataFetcherContext DataFetcherContext required by GraphQL to finish it's job
    * @param metricsSystem The metrics service that activities should be reported to
-   * @param methods The json rpc methods that should be enabled
    */
   public GraphQLRpcHttpService(
       final Vertx vertx,
