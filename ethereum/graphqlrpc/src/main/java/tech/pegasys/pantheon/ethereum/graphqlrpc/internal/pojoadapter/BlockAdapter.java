@@ -200,8 +200,19 @@ public class BlockAdapter extends AdapterBase {
     return null;
   }
 
-  public Optional<CallResult> getCall(final DataFetchingEnvironment environment) {
+  public Optional<UnsignedLong> getEstimateGas(final DataFetchingEnvironment environment) {
+    Optional<CallResult> result = executeCall(environment);
+    if (result.isPresent()) {
+      return Optional.of(result.get().getGasUsed());
+    }
+    return Optional.empty();
+  }
 
+  public Optional<CallResult> getCall(final DataFetchingEnvironment environment) {
+    return executeCall(environment);
+  }
+
+  private Optional<CallResult> executeCall(final DataFetchingEnvironment environment) {
     Map<String, Object> callData = environment.getArgument("data");
     Address from = (Address) callData.get("from");
     Address to = (Address) callData.get("to");

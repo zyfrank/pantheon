@@ -53,6 +53,10 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
     specs.add("eth_getTransactionByBlockHashAndIndex");
     specs.add("eth_getTransactionByBlockNumberAndIndex");
 
+    specs.add("eth_estimateGas_transfer");
+    specs.add("eth_estimateGas_noParams");
+    specs.add("eth_estimateGas_contractDeploy");
+
     specs.add("eth_getCode");
     specs.add("eth_getCode_noCode");
 
