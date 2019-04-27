@@ -53,9 +53,9 @@ public class TransactionAdapter extends AdapterBase {
 
   public Optional<AccountAdapter> getFrom(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
-    UnsignedLong from = environment.getArgument("from");
+    UnsignedLong bn = environment.getArgument("block");
 
-    Optional<MutableWorldState> ws = query.getWorldState(from.longValue());
+    Optional<MutableWorldState> ws = query.getWorldState(bn.longValue());
     if (ws.isPresent()) {
       return Optional.of(
           new AccountAdapter(ws.get().get(transactionWithMetadata.getTransaction().getSender())));
@@ -65,7 +65,7 @@ public class TransactionAdapter extends AdapterBase {
 
   public Optional<AccountAdapter> getTo(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
-    UnsignedLong to = environment.getArgument("to");
+    UnsignedLong to = environment.getArgument("block");
 
     Optional<MutableWorldState> ws = query.getWorldState(to.longValue());
     if (ws.isPresent()) {
