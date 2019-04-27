@@ -59,6 +59,8 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
         specs.add("eth_getStorageAt");
         specs.add("eth_getStorageAt_illegalRangeGreaterThan");
 
+        specs.add("eth_getTransactionCount");
+
         specs.add("eth_getTransactionByBlockNumberAndInvalidIndex");
 
         specs.add("eth_getBlocksByRange");
