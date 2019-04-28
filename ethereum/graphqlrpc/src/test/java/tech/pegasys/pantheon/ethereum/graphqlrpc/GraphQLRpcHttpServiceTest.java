@@ -13,21 +13,25 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.pantheon.ethereum.core.InMemoryStorageProvider.createInMemoryBlockchain;
 import static tech.pegasys.pantheon.ethereum.core.InMemoryStorageProvider.createInMemoryWorldStateArchive;
 
 import tech.pegasys.pantheon.ethereum.blockcreation.EthHashMiningCoordinator;
+import tech.pegasys.pantheon.ethereum.chain.Blockchain;
 import tech.pegasys.pantheon.ethereum.chain.GenesisState;
-import tech.pegasys.pantheon.ethereum.chain.MutableBlockchain;
 import tech.pegasys.pantheon.ethereum.core.Block;
 import tech.pegasys.pantheon.ethereum.core.BlockHeader;
+import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.core.Wei;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
 import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
 import tech.pegasys.pantheon.ethereum.mainnet.MainnetBlockHashFunction;
 import tech.pegasys.pantheon.ethereum.mainnet.MainnetProtocolSchedule;
 import tech.pegasys.pantheon.ethereum.mainnet.ProtocolSchedule;
@@ -36,6 +40,7 @@ import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
 import tech.pegasys.pantheon.ethereum.util.RawBlockIterator;
 import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
 import tech.pegasys.pantheon.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.pantheon.util.bytes.BytesValue;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -43,6 +48,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.base.Charsets;
@@ -80,7 +86,8 @@ public class GraphQLRpcHttpServiceTest {
   protected static GraphQLDataFetchers dataFetchers;
   protected static GraphQLDataFetcherContext dataFetcherContext;
   protected static EthHashMiningCoordinator miningCoordinatorMock;
-  protected static MutableBlockchain blockchain;
+  // protected static MutableBlockchain blockchain;
+  protected static Blockchain blockchain;
   protected static WorldStateArchive stateArchive;
   protected static Block GENESIS_BLOCK;
   protected static GenesisState GENESIS_CONFIG;
@@ -95,23 +102,25 @@ public class GraphQLRpcHttpServiceTest {
   @BeforeClass
   public static void initServerAndClient() throws Exception {
     peerDiscoveryMock = mock(P2PNetwork.class);
-    // blockchainQueries = mock(BlockchainQuery.class);
+    blockchainQueries = mock(BlockchainQuery.class);
     synchronizer = mock(Synchronizer.class);
     graphQL = mock(GraphQL.class);
     stateArchive = createInMemoryWorldStateArchive();
     // GENESIS_CONFIG.writeStateTo(stateArchive.getMutable());
 
-    blockchain = createInMemoryBlockchain(GENESIS_BLOCK);
-
+    // blockchain = createInMemoryBlockchain(GENESIS_BLOCK);
+    blockchain = mock(Blockchain.class);
     miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
-    dataFetcherContext =
-        new GraphQLDataFetcherContext(
-            blockchain,
-            stateArchive,
-            PROTOCOL_SCHEDULE,
-            mock(TransactionPool.class),
-            miningCoordinatorMock,
-            synchronizer);
+    // dataFetcherContext = new GraphQLDataFetcherContext(blockchain, stateArchive,
+    // PROTOCOL_SCHEDULE, mock(TransactionPool.class), miningCoordinatorMock,
+    // synchronizer);
+    dataFetcherContext = mock(GraphQLDataFetcherContext.class);
+    when(dataFetcherContext.getBlockchainQuery()).thenReturn(blockchainQueries);
+    when(dataFetcherContext.getMiningCoordinator()).thenReturn(miningCoordinatorMock);
+    // when(dataFetcherContext.getProtocolSchedule()).thenReturn(PROTOCOL_SCHEDULE);
+    when(dataFetcherContext.getTransactionPool()).thenReturn(mock(TransactionPool.class));
+    when(dataFetcherContext.getSynchronizer()).thenReturn(synchronizer);
+
     final Set<Capability> supportedCapabilities = new HashSet<>();
     supportedCapabilities.add(EthProtocol.ETH62);
     supportedCapabilities.add(EthProtocol.ETH63);
@@ -285,108 +294,85 @@ public class GraphQLRpcHttpServiceTest {
     }
   }
 
+  @Test
+  public void ethGetUncleCountByBlockHash() throws Exception {
+    final int uncleCount = 4;
+    final Hash blockHash = Hash.hash(BytesValue.of(1));
+    @SuppressWarnings("unchecked")
+    final BlockWithMetadata<TransactionWithMetadata, Hash> block = mock(BlockWithMetadata.class);
+    @SuppressWarnings("unchecked")
+    final List<Hash> list = mock(List.class);
+
+    when(blockchainQueries.blockByHash(eq(blockHash))).thenReturn(Optional.of(block));
+    when(block.getOmmers()).thenReturn(list);
+    when(list.size()).thenReturn(uncleCount);
+
+    final String query = "{block(hash:\"" + blockHash.toString() + "\") {ommerCount}}";
+
+    final RequestBody body = RequestBody.create(JSON, query);
+    try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
+      assertThat(resp.code()).isEqualTo(200);
+      final String jsonStr = resp.body().string();
+      System.out.println(jsonStr);
+      final JsonObject json = new JsonObject(jsonStr);
+      testHelper.assertValidGraphQLRpcResult(json);
+      int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
+      assertThat(result).isEqualTo(uncleCount);
+    }
+  }
+
+  @Test
+  public void ethGetUncleCountByBlockNumber() throws Exception {
+    final int uncleCount = 5;
+    @SuppressWarnings("unchecked")
+    final BlockWithMetadata<TransactionWithMetadata, Hash> block = mock(BlockWithMetadata.class);
+    @SuppressWarnings("unchecked")
+    final List<Hash> list = mock(List.class);
+    when(blockchainQueries.blockByNumber(anyLong())).thenReturn(Optional.of(block));
+    when(block.getOmmers()).thenReturn(list);
+    when(list.size()).thenReturn(uncleCount);
+
+    final String query = "{block(number:\"3\") {ommerCount}}";
+
+    final RequestBody body = RequestBody.create(JSON, query);
+    try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
+      assertThat(resp.code()).isEqualTo(200);
+      final String jsonStr = resp.body().string();
+      System.out.println(jsonStr);
+      final JsonObject json = new JsonObject(jsonStr);
+      testHelper.assertValidGraphQLRpcResult(json);
+      int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
+      assertThat(result).isEqualTo(uncleCount);
+    }
+  }
+
+  @Test
+  public void ethGetUncleCountByBlockLatest() throws Exception {
+    final int uncleCount = 5;
+    @SuppressWarnings("unchecked")
+    final BlockWithMetadata<TransactionWithMetadata, Hash> block = mock(BlockWithMetadata.class);
+    @SuppressWarnings("unchecked")
+    final List<Hash> list = mock(List.class);
+    when(blockchainQueries.latestBlock()).thenReturn(Optional.of(block));
+    when(block.getOmmers()).thenReturn(list);
+    when(list.size()).thenReturn(uncleCount);
+
+    final String query = "{block {ommerCount}}";
+
+    final RequestBody body = RequestBody.create(JSON, query);
+    try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
+      assertThat(resp.code()).isEqualTo(200);
+      final String jsonStr = resp.body().string();
+      System.out.println(jsonStr);
+      final JsonObject json = new JsonObject(jsonStr);
+      testHelper.assertValidGraphQLRpcResult(json);
+      int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
+      assertThat(result).isEqualTo(uncleCount);
+    }
+  }
+
   /*
-   * @Test public void ethGetUncleCountByBlockHash() throws Exception { final int
-   * uncleCount = 2; final Hash blockHash = Hash.hash(BytesValue.of(1));
-   * when(blockchainQueries.getOmmerCount(eq(blockHash))).thenReturn(Optional.of(
-   * uncleCount));
-   *
-   * final String id = "123"; final String params = "\"params\": [\"" + blockHash
-   * + "\"]"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) + "," + params +
-   * ",\"method\":\"eth_getUncleCountByBlockHash\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final String jsonStr = resp.body().string(); final JsonObject json = new
-   * JsonObject(jsonStr); testHelper.assertValidGraphQLRpcResult(json, id); //
-   * Check result final String expectedResult = "0x2";
-   * assertThat(json.getString("result")).isEqualTo(expectedResult); } }
-   *
-   * @Test public void ethGetUncleCountByBlockHashNoData() throws Exception {
-   * final Hash blockHash = Hash.hash(BytesValue.of(1));
-   * when(blockchainQueries.getOmmerCount(eq(blockHash))).thenReturn(Optional.
-   * empty());
-   *
-   * final String id = "123"; final String params = "\"params\": [\"" + blockHash
-   * + "\"]"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) + "," + params +
-   * ",\"method\":\"eth_getUncleCountByBlockHash\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final String jsonStr = resp.body().string(); final JsonObject json = new
-   * JsonObject(jsonStr); testHelper.assertValidGraphQLRpcResult(json, id); //
-   * Check result assertThat(json.getString("result")).isNull(); } }
-   *
-   * @Test public void ethGetUncleCountByBlockNumber() throws Exception { final
-   * int uncleCount = 2; final String number = "0x567"; final long blockNumber =
-   * Long.decode(number);
-   * when(blockchainQueries.getOmmerCount(eq(blockNumber))).thenReturn(Optional.of
-   * (uncleCount));
-   *
-   * final String id = "123"; final String params = "\"params\": [\"" + number +
-   * "\"]"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) + "," + params +
-   * ",\"method\":\"eth_getUncleCountByBlockNumber\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * String expectedResult = "0x2";
-   * assertThat(json.getString("result")).isEqualTo(expectedResult); } }
-   *
-   * @Test public void ethGetUncleCountByBlockNumberNoData() throws Exception {
-   * final String number = "0x567"; final long blockNumber = Long.decode(number);
-   * when(blockchainQueries.getOmmerCount(eq(blockNumber))).thenReturn(Optional.
-   * empty());
-   *
-   * final String id = "123"; final String params = "\"params\": [\"" + number +
-   * "\"]"; final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) + "," + params +
-   * ",\"method\":\"eth_getUncleCountByBlockNumber\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result
-   * assertThat(json.getString("result")).isNull(); } }
-   *
-   * @Test public void ethGetUncleCountByBlockNumberEarliest() throws Exception {
-   * final int uncleCount = 2;
-   * when(blockchainQueries.getOmmerCount(eq(BlockHeader.GENESIS_BLOCK_NUMBER))).
-   * thenReturn(Optional.of(uncleCount));
-   *
-   * final String id = "123"; final String params = "\"params\": [\"earliest\"]";
-   * final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) + "," + params +
-   * ",\"method\":\"eth_getUncleCountByBlockNumber\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * String expectedResult = "0x2";
-   * assertThat(json.getString("result")).isEqualTo(expectedResult); } }
-   *
-   * @Test public void ethGetUncleCountByBlockNumberLatest() throws Exception {
-   * final int uncleCount = 0;
-   * when(blockchainQueries.headBlockNumber()).thenReturn(0L);
-   * when(blockchainQueries.getOmmerCount(eq(0L))).thenReturn(Optional.of(
-   * uncleCount));
-   *
-   * final String id = "123"; final String params = "\"params\": [\"latest\"]";
-   * final RequestBody body = RequestBody.create(JSON,
-   * "{\"jsonrpc\":\"2.0\",\"id\":" + Json.encode(id) + "," + params +
-   * ",\"method\":\"eth_getUncleCountByBlockNumber\"}");
-   *
-   * try (final Response resp = client.newCall(buildPostRequest(body)).execute())
-   * { assertThat(resp.code()).isEqualTo(200); // Check general format of result
-   * final JsonObject json = new JsonObject(resp.body().string());
-   * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
-   * String expectedResult = "0x0";
-   * assertThat(json.getString("result")).isEqualTo(expectedResult); } }
+   * *
    *
    * @Test public void ethGetUncleCountByBlockNumberPending() throws Exception {
    * final String id = "123"; final String params = "\"params\": [\"pending\"]";
@@ -425,7 +411,8 @@ public class GraphQLRpcHttpServiceTest {
    * testHelper.assertValidGraphQLRpcResult(json, id); // Check result final
    * String expectedResult = "0x0";
    * assertThat(json.getString("result")).isEqualTo(expectedResult); } }
-   *
+   */
+  /*
    * @Test public void getBalanceForLatest() throws Exception { // Setup mocks to
    * return a block final BlockDataGenerator gen = new BlockDataGenerator(); final
    * Address address = gen.address(); final String mockBalance = "0x35";
