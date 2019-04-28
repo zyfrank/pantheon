@@ -79,6 +79,10 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
     specs.add("eth_syncing");
     specs.add("eth_sendRawTransaction_contractCreation");
 
+    specs.add("eth_sendRawTransaction_messageCall");
+    specs.add("eth_sendRawTransaction_transferEther");
+    specs.add("eth_sendRawTransaction_unsignedTransaction");
+
     return specs;
   }
 
@@ -93,7 +97,6 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
         Resources.toString(
             EthGraphQLRpcHttpBySpecTest.class.getResource(testSpecFile), Charsets.UTF_8);
     final JsonObject spec = new JsonObject(json);
-
     final String rawRequestBody = spec.getString("request");
     final RequestBody requestBody = RequestBody.create(JSON, rawRequestBody);
     final Request request = new Request.Builder().post(requestBody).url(baseUrl).build();
