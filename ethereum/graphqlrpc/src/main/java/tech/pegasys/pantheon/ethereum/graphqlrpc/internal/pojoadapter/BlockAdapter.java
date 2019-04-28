@@ -14,11 +14,14 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
+import tech.pegasys.pantheon.ethereum.core.LogTopic;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.Wei;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.LogWithMetadata;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.LogsQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
 import tech.pegasys.pantheon.ethereum.mainnet.ProtocolSchedule;
 import tech.pegasys.pantheon.ethereum.transaction.CallParameter;
@@ -32,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedLong;
@@ -192,12 +196,31 @@ public class BlockAdapter extends AdapterBase {
   }
 
   public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
-    /*
-     * Map<String, Object> filters = environment.getArgument("filter");
-     * List<Address> addrs = filters.get("addresses"); List<List<Bytes32>> topics =
-     * filters.get("topics");
-     */
-    return null;
+
+    Map<String, Object> filter = environment.getArgument("filter");
+
+    @SuppressWarnings("unchecked")
+    List<Address> addrs = (List<Address>) filter.get("addresses");
+    @SuppressWarnings("unchecked")
+    List<List<Bytes32>> topics = (List<List<Bytes32>>) filter.get("topics");
+
+    List<List<LogTopic>> transformedTopics = new ArrayList<>();
+    for (List<Bytes32> topic : topics) {
+      transformedTopics.add(topic.stream().map(LogTopic::of).collect(Collectors.toList()));
+    }
+
+    final LogsQuery query =
+        new LogsQuery.Builder().addresses(addrs).topics(transformedTopics).build();
+
+    final BlockchainQuery blockchain = getBlockchainQuery(environment);
+
+    Hash hash = blockWithMetaData.getHeader().getHash();
+    List<LogWithMetadata> logs = blockchain.matchingLogs(hash, query);
+    List<LogAdapter> results = new ArrayList<>();
+    for (LogWithMetadata log : logs) {
+      results.add(new LogAdapter(log));
+    }
+    return results;
   }
 
   public Optional<UnsignedLong> getEstimateGas(final DataFetchingEnvironment environment) {
