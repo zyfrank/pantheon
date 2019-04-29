@@ -13,6 +13,7 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.ethereum.core.Address;
+import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.LogTopic;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
@@ -40,154 +41,97 @@ import java.util.stream.Collectors;
 import com.google.common.primitives.Longs;
 import graphql.schema.DataFetchingEnvironment;
 
-public class BlockAdapter extends AdapterBase {
-  public BlockAdapter(final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData) {
-    this.blockWithMetaData = blockWithMetaData;
+public class BlockAdapterBase extends AdapterBase {
+
+  private final BlockHeader header;
+
+  public BlockAdapterBase(final BlockHeader header) {
+    this.header = header;
   }
 
-  private final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData;
-
-  public Optional<BlockAdapter> getParent(final DataFetchingEnvironment environment) {
+  public Optional<NormalBlockAdapter> getParent(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
-    Hash parentHash = blockWithMetaData.getHeader().getParentHash();
+    Hash parentHash = header.getParentHash();
     Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block =
         query.blockByHash(parentHash);
-    return block.map(item -> new BlockAdapter(item));
+    return block.map(item -> new NormalBlockAdapter(item));
   }
 
   public Optional<Bytes32> getHash() {
-    return Optional.of(blockWithMetaData.getHeader().getHash());
+    return Optional.of(header.getHash());
   }
 
   public Optional<BytesValue> getNonce() {
-    long nonce = blockWithMetaData.getHeader().getNonce();
+    long nonce = header.getNonce();
     byte[] bytes = Longs.toByteArray(nonce);
     return Optional.of(BytesValue.wrap(bytes));
   }
 
   public Optional<Bytes32> getTransactionsRoot() {
-    return Optional.of(blockWithMetaData.getHeader().getTransactionsRoot());
-  }
-
-  public Optional<Integer> getTransactionCount() {
-    return Optional.of(blockWithMetaData.getTransactions().size());
+    return Optional.of(header.getTransactionsRoot());
   }
 
   public Optional<Bytes32> getStateRoot() {
-    return Optional.of(blockWithMetaData.getHeader().getStateRoot());
+    return Optional.of(header.getStateRoot());
   }
 
   public Optional<Bytes32> getReceiptsRoot() {
-    return Optional.of(blockWithMetaData.getHeader().getReceiptsRoot());
+    return Optional.of(header.getReceiptsRoot());
   }
 
   public Optional<AccountAdapter> getMiner(final DataFetchingEnvironment environment) {
+
     BlockchainQuery query = getBlockchainQuery(environment);
-    long blockNumber = blockWithMetaData.getHeader().getNumber();
+    long blockNumber = header.getNumber();
     Long bn = environment.getArgument("block");
     if (bn != null) {
       blockNumber = bn.longValue();
     }
     return Optional.of(
-        new AccountAdapter(
-            query
-                .getWorldState(blockNumber)
-                .get()
-                .get(blockWithMetaData.getHeader().getCoinbase())));
+        new AccountAdapter(query.getWorldState(blockNumber).get().get(header.getCoinbase())));
   }
 
   public Optional<BytesValue> getExtraData() {
-    return Optional.of(blockWithMetaData.getHeader().getExtraData());
+    return Optional.of(header.getExtraData());
   }
 
   public Optional<Long> getGasLimit() {
-    return Optional.of(Long.valueOf(blockWithMetaData.getHeader().getGasLimit()));
+    return Optional.of(Long.valueOf(header.getGasLimit()));
   }
 
   public Optional<Long> getGasUsed() {
-    return Optional.of(Long.valueOf(blockWithMetaData.getHeader().getGasUsed()));
+    return Optional.of(Long.valueOf(header.getGasUsed()));
   }
 
   public Optional<UInt256> getTimestamp() {
-    return Optional.of(UInt256.of(blockWithMetaData.getHeader().getTimestamp()));
+    return Optional.of(UInt256.of(header.getTimestamp()));
   }
 
   public Optional<BytesValue> getLogsBloom() {
-    return Optional.of(blockWithMetaData.getHeader().getLogsBloom().getBytes());
+    return Optional.of(header.getLogsBloom().getBytes());
   }
 
   public Optional<Bytes32> getMixHash() {
-    return Optional.of(blockWithMetaData.getHeader().getMixHash());
+    return Optional.of(header.getMixHash());
   }
 
   public Optional<UInt256> getDifficulty() {
-    return Optional.of(blockWithMetaData.getHeader().getDifficulty());
-  }
-
-  public Optional<UInt256> getTotalDifficulty() {
-    return Optional.of(blockWithMetaData.getTotalDifficulty());
-  }
-
-  public Optional<Integer> getOmmerCount() {
-    return Optional.of(blockWithMetaData.getOmmers().size());
-  }
-
-  public List<BlockAdapter> getOmmers(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = getBlockchainQuery(environment);
-    List<Hash> ommers = blockWithMetaData.getOmmers();
-    List<BlockAdapter> results = new ArrayList<BlockAdapter>();
-    for (Hash item : ommers) {
-      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block = query.blockByHash(item);
-      block.ifPresent(ele -> results.add(new BlockAdapter(ele)));
-    }
-    return results;
-  }
-
-  public Optional<BlockAdapter> getOmmerAt(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = getBlockchainQuery(environment);
-    int index = environment.getArgument("index");
-    List<Hash> ommers = blockWithMetaData.getOmmers();
-    if (ommers.size() > index) {
-      Hash ommer = ommers.get(index);
-      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block = query.blockByHash(ommer);
-      return block.map(item -> new BlockAdapter(item));
-    }
-    return Optional.empty();
+    return Optional.of(header.getDifficulty());
   }
 
   public Optional<Bytes32> getOmmerHash() {
-    return Optional.of(blockWithMetaData.getHeader().getOmmersHash());
-  }
-
-  public List<TransactionAdapter> getTransactions() {
-    List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
-    List<TransactionAdapter> results = new ArrayList<TransactionAdapter>();
-    for (TransactionWithMetadata tran : trans) {
-      results.add(new TransactionAdapter(tran));
-    }
-    return results;
-  }
-
-  public Optional<TransactionAdapter> getTransactionAt(final DataFetchingEnvironment environment) {
-    int index = environment.getArgument("index");
-    List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
-
-    if (trans.size() > index) {
-      return Optional.of(new TransactionAdapter(trans.get(index)));
-    }
-
-    return Optional.empty();
+    return Optional.of(header.getOmmersHash());
   }
 
   public Optional<Long> getNumber() {
-    long bn = blockWithMetaData.getHeader().getNumber();
+    long bn = header.getNumber();
     return Optional.of(Long.valueOf(bn));
   }
 
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
 
     BlockchainQuery query = getBlockchainQuery(environment);
-    long bn = blockWithMetaData.getHeader().getNumber();
+    long bn = header.getNumber();
     MutableWorldState ws = query.getWorldState(bn).get();
 
     if (ws != null) {
@@ -216,7 +160,7 @@ public class BlockAdapter extends AdapterBase {
 
     final BlockchainQuery blockchain = getBlockchainQuery(environment);
 
-    Hash hash = blockWithMetaData.getHeader().getHash();
+    Hash hash = header.getHash();
     List<LogWithMetadata> logs = blockchain.matchingLogs(hash, query);
     List<LogAdapter> results = new ArrayList<>();
     for (LogWithMetadata log : logs) {
@@ -249,7 +193,7 @@ public class BlockAdapter extends AdapterBase {
     final BlockchainQuery query = getBlockchainQuery(environment);
     ProtocolSchedule<?> protocolSchedule =
         ((GraphQLDataFetcherContext) environment.getContext()).getProtocolSchedule();
-    long bn = blockWithMetaData.getHeader().getNumber();
+    long bn = header.getNumber();
 
     final TransactionSimulator transactionSimulator =
         new TransactionSimulator(

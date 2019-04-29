@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 
 import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.BlockAdapter;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.NormalBlockAdapter;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
 
 import java.util.Optional;
@@ -31,7 +31,7 @@ import org.mockito.Mock;
 
 public abstract class AbstractDataFetcherTest {
 
-  protected DataFetcher<Optional<BlockAdapter>> fetcher;
+  protected DataFetcher<Optional<NormalBlockAdapter>> fetcher;
   @Mock protected TransactionPool transactionPool;
   protected GraphQLDataFetchers fetchers;
 

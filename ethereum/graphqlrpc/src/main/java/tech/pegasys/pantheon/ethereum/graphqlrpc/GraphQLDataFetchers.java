@@ -26,7 +26,7 @@ import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.AccountAdapter;
-import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.BlockAdapter;
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.NormalBlockAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.SyncStateAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.TransactionAdapter;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcError;
@@ -103,7 +103,7 @@ public class GraphQLDataFetchers {
     };
   }
 
-  public DataFetcher<List<BlockAdapter>> getRangeBlockDataFetcher() {
+  public DataFetcher<List<NormalBlockAdapter>> getRangeBlockDataFetcher() {
 
     return dataFetchingEnvironment -> {
       long from = ((Long) dataFetchingEnvironment.getArgument("from")).longValue();
@@ -115,18 +115,18 @@ public class GraphQLDataFetchers {
       BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
 
-      List<BlockAdapter> results = new ArrayList<BlockAdapter>();
+      List<NormalBlockAdapter> results = new ArrayList<NormalBlockAdapter>();
       for (long i = from; i <= to; i++) {
         BlockWithMetadata<TransactionWithMetadata, Hash> block = blockchain.blockByNumber(i).get();
         if (block != null) {
-          results.add(new BlockAdapter(block));
+          results.add(new NormalBlockAdapter(block));
         }
       }
       return results;
     };
   }
 
-  public DataFetcher<Optional<BlockAdapter>> getBlockDataFetcher() {
+  public DataFetcher<Optional<NormalBlockAdapter>> getBlockDataFetcher() {
 
     return dataFetchingEnvironment -> {
       BlockchainQuery blockchain =
@@ -148,7 +148,7 @@ public class GraphQLDataFetchers {
       if (!block.isPresent()) {
         block = blockchain.latestBlock();
       }
-      return block.map(item -> new BlockAdapter(item));
+      return block.map(item -> new NormalBlockAdapter(item));
     };
   }
 

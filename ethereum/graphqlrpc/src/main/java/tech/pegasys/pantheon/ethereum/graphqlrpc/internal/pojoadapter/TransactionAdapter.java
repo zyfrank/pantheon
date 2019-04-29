@@ -99,12 +99,12 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.of(transactionWithMetadata.getTransaction().getPayload());
   }
 
-  public Optional<BlockAdapter> getBlock(final DataFetchingEnvironment environment) {
+  public Optional<NormalBlockAdapter> getBlock(final DataFetchingEnvironment environment) {
     long blockNumber = transactionWithMetadata.getBlockNumber();
     BlockchainQuery query = getBlockchainQuery(environment);
     Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block =
         query.blockByNumber(blockNumber);
-    return block.map(item -> new BlockAdapter(item));
+    return block.map(item -> new NormalBlockAdapter(item));
   }
 
   public Optional<Long> getStatus(final DataFetchingEnvironment environment) {
