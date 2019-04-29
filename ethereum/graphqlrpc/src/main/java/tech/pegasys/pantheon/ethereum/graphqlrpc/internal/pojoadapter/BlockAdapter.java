@@ -38,7 +38,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.google.common.primitives.Longs;
-import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
 public class BlockAdapter extends AdapterBase {
@@ -85,7 +84,7 @@ public class BlockAdapter extends AdapterBase {
   public Optional<AccountAdapter> getMiner(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = blockWithMetaData.getHeader().getNumber();
-    UnsignedLong bn = environment.getArgument("block");
+    Long bn = environment.getArgument("block");
     if (bn != null) {
       blockNumber = bn.longValue();
     }
@@ -101,12 +100,12 @@ public class BlockAdapter extends AdapterBase {
     return Optional.of(blockWithMetaData.getHeader().getExtraData());
   }
 
-  public Optional<UnsignedLong> getGasLimit() {
-    return Optional.of(UnsignedLong.valueOf(blockWithMetaData.getHeader().getGasLimit()));
+  public Optional<Long> getGasLimit() {
+    return Optional.of(Long.valueOf(blockWithMetaData.getHeader().getGasLimit()));
   }
 
-  public Optional<UnsignedLong> getGasUsed() {
-    return Optional.of(UnsignedLong.valueOf(blockWithMetaData.getHeader().getGasUsed()));
+  public Optional<Long> getGasUsed() {
+    return Optional.of(Long.valueOf(blockWithMetaData.getHeader().getGasUsed()));
   }
 
   public Optional<UInt256> getTimestamp() {
@@ -180,9 +179,9 @@ public class BlockAdapter extends AdapterBase {
     return Optional.empty();
   }
 
-  public Optional<UnsignedLong> getNumber() {
+  public Optional<Long> getNumber() {
     long bn = blockWithMetaData.getHeader().getNumber();
-    return Optional.of(UnsignedLong.valueOf(bn));
+    return Optional.of(Long.valueOf(bn));
   }
 
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
@@ -226,7 +225,7 @@ public class BlockAdapter extends AdapterBase {
     return results;
   }
 
-  public Optional<UnsignedLong> getEstimateGas(final DataFetchingEnvironment environment) {
+  public Optional<Long> getEstimateGas(final DataFetchingEnvironment environment) {
     Optional<CallResult> result = executeCall(environment);
     if (result.isPresent()) {
       return Optional.of(result.get().getGasUsed());
@@ -242,7 +241,7 @@ public class BlockAdapter extends AdapterBase {
     Map<String, Object> callData = environment.getArgument("data");
     Address from = (Address) callData.get("from");
     Address to = (Address) callData.get("to");
-    UnsignedLong gas = (UnsignedLong) callData.get("gas");
+    Long gas = (Long) callData.get("gas");
     UInt256 gasPrice = (UInt256) callData.get("gasPrice");
     UInt256 value = (UInt256) callData.get("value");
     BytesValue data = (BytesValue) callData.get("data");
@@ -280,9 +279,7 @@ public class BlockAdapter extends AdapterBase {
       }
       CallResult callResult =
           new CallResult(
-              UnsignedLong.valueOf(status),
-              UnsignedLong.valueOf(result.getGasEstimate()),
-              result.getOutput());
+              Long.valueOf(status), Long.valueOf(result.getGasEstimate()), result.getOutput());
       return Optional.of(callResult);
     }
     return Optional.empty();

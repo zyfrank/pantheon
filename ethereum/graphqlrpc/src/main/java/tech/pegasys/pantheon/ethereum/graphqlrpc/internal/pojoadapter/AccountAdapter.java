@@ -20,7 +20,6 @@ import tech.pegasys.pantheon.util.uint.UInt256;
 
 import java.util.Optional;
 
-import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
 public class AccountAdapter extends AdapterBase {
@@ -38,8 +37,8 @@ public class AccountAdapter extends AdapterBase {
     return Optional.of(account.getBalance().asUInt256());
   }
 
-  public Optional<UnsignedLong> getTransactionCount() {
-    return Optional.of(UnsignedLong.valueOf(account.getNonce()));
+  public Optional<Long> getTransactionCount() {
+    return Optional.of(Long.valueOf(account.getNonce()));
   }
 
   public Optional<BytesValue> getCode() {

@@ -12,7 +12,6 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 
-import com.google.common.primitives.UnsignedLong;
 import graphql.Internal;
 import graphql.language.StringValue;
 import graphql.schema.Coercing;
@@ -31,16 +30,16 @@ public class LongScalar extends GraphQLScalarType {
         new Coercing<Object, Object>() {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
-            if (input instanceof UnsignedLong) {
-              return "0x" + ((UnsignedLong) input).toString(16);
+            if (input instanceof Long) {
+              return "0x" + Long.toHexString((Long) input);
             }
             throw new CoercingSerializeException("Unable to serialize " + input + " as an Long");
           }
 
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
-            if (input instanceof UnsignedLong) {
-              return "0x" + ((UnsignedLong) input).toString(16);
+            if (input instanceof Long) {
+              return "0x" + Long.toHexString((Long) input);
             }
             throw new CoercingParseValueException(
                 "Unable to parse variable value " + input + " as an Long");
@@ -52,10 +51,10 @@ public class LongScalar extends GraphQLScalarType {
               throw new CoercingParseLiteralException(
                   "Value is not any Long : '" + String.valueOf(input) + "'");
             }
-            UnsignedLong result;
+            Long result;
             try {
               String inputString = ((StringValue) input).getValue();
-              result = UnsignedLong.valueOf(inputString.replaceAll("0x", ""), 16);
+              result = Long.decode(inputString);
             } catch (NumberFormatException e) {
               throw new CoercingParseLiteralException(
                   "Value is not any Long : '" + String.valueOf(input) + "'");

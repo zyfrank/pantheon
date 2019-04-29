@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
 public class TransactionAdapter extends AdapterBase {
@@ -43,9 +42,9 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.of(transactionWithMetadata.getTransaction().hash());
   }
 
-  public Optional<UnsignedLong> getNonce() {
+  public Optional<Long> getNonce() {
     long nonce = transactionWithMetadata.getTransaction().getNonce();
-    return Optional.of(UnsignedLong.valueOf(nonce));
+    return Optional.of(Long.valueOf(nonce));
   }
 
   public Optional<Integer> getIndex() {
@@ -55,7 +54,7 @@ public class TransactionAdapter extends AdapterBase {
   public Optional<AccountAdapter> getFrom(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = transactionWithMetadata.getBlockNumber();
-    UnsignedLong bn = environment.getArgument("block");
+    Long bn = environment.getArgument("block");
     if (bn != null) {
       blockNumber = bn.longValue();
     }
@@ -70,7 +69,7 @@ public class TransactionAdapter extends AdapterBase {
   public Optional<AccountAdapter> getTo(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = transactionWithMetadata.getBlockNumber();
-    UnsignedLong bn = environment.getArgument("block");
+    Long bn = environment.getArgument("block");
     if (bn != null) {
       blockNumber = bn.longValue();
     }
@@ -92,9 +91,8 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.of(transactionWithMetadata.getTransaction().getGasPrice().asUInt256());
   }
 
-  public Optional<UnsignedLong> getGas() {
-    return Optional.of(
-        UnsignedLong.valueOf(transactionWithMetadata.getTransaction().getGasLimit()));
+  public Optional<Long> getGas() {
+    return Optional.of(Long.valueOf(transactionWithMetadata.getTransaction().getGasLimit()));
   }
 
   public Optional<BytesValue> getInputData() {
@@ -109,7 +107,7 @@ public class TransactionAdapter extends AdapterBase {
     return block.map(item -> new BlockAdapter(item));
   }
 
-  public Optional<UnsignedLong> getStatus(final DataFetchingEnvironment environment) {
+  public Optional<Long> getStatus(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     Transaction tran = transactionWithMetadata.getTransaction();
     if (tran != null) {
@@ -121,7 +119,12 @@ public class TransactionAdapter extends AdapterBase {
           if (rpt.isPresent()) {
             TransactionReceipt receipt = rpt.get().getReceipt();
             if (receipt != null) {
-              return Optional.of(UnsignedLong.valueOf(receipt.getStatus()));
+              int status = receipt.getStatus();
+              // -1 mean no status
+              if (status == -1) {
+                return Optional.empty();
+              }
+              return Optional.of(Long.valueOf(status));
             }
           }
         }
@@ -133,23 +136,23 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.empty();
   }
 
-  public Optional<UnsignedLong> getGasUsed(final DataFetchingEnvironment environment) {
+  public Optional<Long> getGasUsed(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     Optional<TransactionReceiptWithMetadata> rpt =
         query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
     if (rpt.isPresent()) {
-      return Optional.of(UnsignedLong.valueOf(rpt.get().getGasUsed()));
+      return Optional.of(Long.valueOf(rpt.get().getGasUsed()));
     }
     return Optional.empty();
   }
 
-  public Optional<UnsignedLong> getCumulativeGasUsed(final DataFetchingEnvironment environment) {
+  public Optional<Long> getCumulativeGasUsed(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     Optional<TransactionReceiptWithMetadata> rpt =
         query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
     if (rpt.isPresent()) {
       TransactionReceipt receipt = rpt.get().getReceipt();
-      return Optional.of(UnsignedLong.valueOf(receipt.getCumulativeGasUsed()));
+      return Optional.of(Long.valueOf(receipt.getCumulativeGasUsed()));
     }
     return Optional.empty();
   }
@@ -162,7 +165,7 @@ public class TransactionAdapter extends AdapterBase {
       if (addr.isPresent()) {
         BlockchainQuery query = getBlockchainQuery(environment);
         long blockNumber = transactionWithMetadata.getBlockNumber();
-        UnsignedLong bn = environment.getArgument("block");
+        Long bn = environment.getArgument("block");
         if (bn != null) {
           blockNumber = bn.longValue();
         }

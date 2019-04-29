@@ -14,24 +14,22 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 
-import com.google.common.primitives.UnsignedLong;
-
 public class CallResult {
-  private UnsignedLong status;
-  private UnsignedLong gasUsed;
+  private Long status;
+  private Long gasUsed;
   private BytesValue data;
 
-  public CallResult(final UnsignedLong status, final UnsignedLong gasUsed, final BytesValue data) {
+  public CallResult(final Long status, final Long gasUsed, final BytesValue data) {
     this.status = status;
     this.gasUsed = gasUsed;
     this.data = data;
   }
 
-  public UnsignedLong getStatus() {
+  public Long getStatus() {
     return status;
   }
 
-  public UnsignedLong getGasUsed() {
+  public Long getGasUsed() {
     return gasUsed;
   }
 

@@ -14,7 +14,6 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import graphql.language.StringValue;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
@@ -32,16 +31,15 @@ public class LongScalarTest {
   private LongScalar scalar;
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private String str = "16";
-  private String strWith0x = "0x16";
-  private UnsignedLong value = UnsignedLong.valueOf(str, 16);
+  private String str = "0xf4240";
+  private Long value = Long.decode(str);
   private StringValue strValue = StringValue.newStringValue(str).build();
   private StringValue invalidStrValue = StringValue.newStringValue("gh").build();
 
   @Test
   public void pareValueTest() {
     String result = (String) scalar.getCoercing().parseValue(value);
-    assertThat(result).isEqualTo(strWith0x);
+    assertThat(result).isEqualTo(str);
   }
 
   @Test
@@ -53,7 +51,7 @@ public class LongScalarTest {
   @Test
   public void serializeTest() {
     String result = (String) scalar.getCoercing().serialize(value);
-    assertThat(result).isEqualTo(strWith0x);
+    assertThat(result).isEqualTo(str);
   }
 
   @Test
@@ -64,7 +62,7 @@ public class LongScalarTest {
 
   @Test
   public void pareLiteralTest() {
-    UnsignedLong result = (UnsignedLong) scalar.getCoercing().parseLiteral(strValue);
+    Long result = (Long) scalar.getCoercing().parseLiteral(strValue);
     assertThat(result).isEqualTo(value);
   }
 

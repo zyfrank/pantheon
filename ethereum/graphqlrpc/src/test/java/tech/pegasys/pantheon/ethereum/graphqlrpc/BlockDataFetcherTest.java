@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -29,7 +28,7 @@ public class BlockDataFetcherTest extends AbstractDataFetcherTest {
   @Test
   public void bothNumberAndHashThrows() throws Exception {
     final Hash fakedHash = Hash.hash(BytesValue.of(1));
-    when(environment.getArgument(eq("number"))).thenReturn(UnsignedLong.valueOf(1));
+    when(environment.getArgument(eq("number"))).thenReturn(Long.valueOf(1));
     when(environment.getArgument(eq("hash"))).thenReturn(fakedHash);
 
     thrown.expect(CustomException.class);
@@ -39,7 +38,7 @@ public class BlockDataFetcherTest extends AbstractDataFetcherTest {
   @Test
   public void onlyNumber() throws Exception {
 
-    when(environment.getArgument(eq("number"))).thenReturn(UnsignedLong.valueOf(1));
+    when(environment.getArgument(eq("number"))).thenReturn(Long.valueOf(1));
     when(environment.getArgument(eq("hash"))).thenReturn(null);
 
     when(environment.getContext()).thenReturn(context);

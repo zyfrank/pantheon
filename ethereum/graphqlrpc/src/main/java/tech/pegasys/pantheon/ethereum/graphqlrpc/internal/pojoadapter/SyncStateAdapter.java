@@ -16,8 +16,6 @@ import tech.pegasys.pantheon.ethereum.core.SyncStatus;
 
 import java.util.Optional;
 
-import com.google.common.primitives.UnsignedLong;
-
 public class SyncStateAdapter {
   private SyncStatus syncStatus;
 
@@ -25,24 +23,24 @@ public class SyncStateAdapter {
     this.syncStatus = syncStatus;
   }
 
-  public Optional<UnsignedLong> getStartingBlock() {
-    return Optional.of(UnsignedLong.valueOf(syncStatus.getStartingBlock()));
+  public Optional<Long> getStartingBlock() {
+    return Optional.of(Long.valueOf(syncStatus.getStartingBlock()));
   }
 
-  public Optional<UnsignedLong> getCurrentBlock() {
-    return Optional.of(UnsignedLong.valueOf(syncStatus.getCurrentBlock()));
+  public Optional<Long> getCurrentBlock() {
+    return Optional.of(Long.valueOf(syncStatus.getCurrentBlock()));
   }
 
-  public Optional<UnsignedLong> getHighestBlock() {
-    return Optional.of(UnsignedLong.valueOf(syncStatus.getHighestBlock()));
+  public Optional<Long> getHighestBlock() {
+    return Optional.of(Long.valueOf(syncStatus.getHighestBlock()));
   }
 
-  public Optional<UnsignedLong> getPulledStates() {
+  public Optional<Long> getPulledStates() {
     // currently synchronizer has no this information?
     return Optional.empty();
   }
 
-  public Optional<UnsignedLong> getKnownStates() {
+  public Optional<Long> getKnownStates() {
     // currently synchronizer has no this information?
     return Optional.empty();
   }

@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
-import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetcher;
 
 public class GraphQLDataFetchers {
@@ -107,8 +106,8 @@ public class GraphQLDataFetchers {
   public DataFetcher<List<BlockAdapter>> getRangeBlockDataFetcher() {
 
     return dataFetchingEnvironment -> {
-      long from = ((UnsignedLong) dataFetchingEnvironment.getArgument("from")).longValue();
-      long to = ((UnsignedLong) dataFetchingEnvironment.getArgument("to")).longValue();
+      long from = ((Long) dataFetchingEnvironment.getArgument("from")).longValue();
+      long to = ((Long) dataFetchingEnvironment.getArgument("to")).longValue();
       if (from > to) {
         throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
       }
@@ -132,7 +131,7 @@ public class GraphQLDataFetchers {
     return dataFetchingEnvironment -> {
       BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
-      UnsignedLong number = dataFetchingEnvironment.getArgument("number");
+      Long number = dataFetchingEnvironment.getArgument("number");
       Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
       if ((number != null) && (hash != null)) {
         throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
@@ -158,7 +157,7 @@ public class GraphQLDataFetchers {
       BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
       Address addr = dataFetchingEnvironment.getArgument("address");
-      UnsignedLong bn = dataFetchingEnvironment.getArgument("blockNumber");
+      Long bn = dataFetchingEnvironment.getArgument("blockNumber");
       if (bn != null) {
         Optional<MutableWorldState> ws = blockchain.getWorldState(bn.longValue());
         if (ws.isPresent()) {

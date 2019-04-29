@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.google.common.primitives.UnsignedLong;
 import graphql.schema.DataFetchingEnvironment;
 
 public class LogAdapter extends AdapterBase {
@@ -62,7 +61,7 @@ public class LogAdapter extends AdapterBase {
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = logWithMetadata.getBlockNumber();
-    UnsignedLong bn = environment.getArgument("block");
+    Long bn = environment.getArgument("block");
     if (bn != null) {
       blockNumber = bn.longValue();
     }
