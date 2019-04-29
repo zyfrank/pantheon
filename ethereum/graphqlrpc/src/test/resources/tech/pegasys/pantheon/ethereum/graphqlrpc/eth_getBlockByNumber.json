@@ -7,9 +7,12 @@
   "response":  {
     "data" : {
       "block" : {
-        "timestamp" : "1444660022",
-        "difficulty" : "132928",
-        "totalDifficulty" : "4091072",
+        "transactions" : [ {
+          "hash" : "0x9cc6c7e602c56aa30c554bb691377f8703d778cec8845f4b88c0f72516b304f4"
+        } ],
+        "timestamp" : "0x561bc336",
+        "difficulty" : "0x20740",
+        "totalDifficulty" : "0x3e6cc0",
         "gasUsed" : "0x5c21",
         "gasLimit" : "0x2fefd8",
         "hash" : "0xc8df1f061abb4d0c107b2b1a794ade8780b3120e681f723fe55a7be586d95ba6",
@@ -22,10 +25,7 @@
         "stateRoot" : "0xdb46d6bb168130fe2cb60b4b24346137b5741f11283e0d7edace65c5f5466b2e",
         "receiptsRoot" : "0x88b3b304b058b39791c26fdb94a05cc16ce67cf8f84f7348cb3c60c0ff342d0d",
         "transactionCount" : 1,
-        "transactionsRoot" : "0x5a8d5d966b48e1331ae19eb459eb28882cdc7654e615d37774b79204e875dc01",
-        "transactions" : [ {
-          "hash" : "0x9cc6c7e602c56aa30c554bb691377f8703d778cec8845f4b88c0f72516b304f4"
-        } ]
+        "transactionsRoot" : "0x5a8d5d966b48e1331ae19eb459eb28882cdc7654e615d37774b79204e875dc01"
       }
     }
   },

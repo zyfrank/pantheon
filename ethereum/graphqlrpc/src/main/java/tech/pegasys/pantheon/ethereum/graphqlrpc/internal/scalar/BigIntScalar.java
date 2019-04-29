@@ -33,7 +33,7 @@ public class BigIntScalar extends GraphQLScalarType {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
             if (input instanceof UInt256) {
-              return ((UInt256) input).toString();
+              return ((UInt256) input).toShortHexString();
             }
             throw new CoercingSerializeException("Unable to serialize " + input + " as an BigInt");
           }
@@ -41,7 +41,7 @@ public class BigIntScalar extends GraphQLScalarType {
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
             if (input instanceof UInt256) {
-              return ((UInt256) input).toString();
+              return ((UInt256) input).toShortHexString();
             }
             throw new CoercingParseValueException(
                 "Unable to parse variable value " + input + " as an BigInt");

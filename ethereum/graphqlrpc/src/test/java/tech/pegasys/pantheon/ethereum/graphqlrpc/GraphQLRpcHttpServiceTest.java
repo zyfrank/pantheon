@@ -246,7 +246,7 @@ public class GraphQLRpcHttpServiceTest {
       final JsonObject json = new JsonObject(resp.body().string());
       testHelper.assertValidGraphQLRpcResult(json);
       String result = json.getJsonObject("data").getString("gasPrice");
-      assertThat(result).isEqualTo("16");
+      assertThat(result).isEqualTo("0x10");
     }
   }
 

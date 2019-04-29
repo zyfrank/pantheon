@@ -25,26 +25,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BlockDataFetcherTest extends AbstractDataFetcherTest {
-  /*
-   * private DataFetcher<Optional<BlockAdapter>> fetcher;
-   *
-   * @Mock private TransactionPool transactionPool; private GraphQLDataFetchers
-   * fetchers;
-   *
-   * @Mock private Set<Capability> supportedCapabilities;
-   *
-   * @Mock private DataFetchingEnvironment environment;
-   *
-   * @Mock private GraphQLDataFetcherContext context;
-   *
-   * @Mock private BlockchainQuery query;
-   *
-   * @Rule public ExpectedException thrown = ExpectedException.none();
-   *
-   * @Before public void before() { fetchers = new
-   * GraphQLDataFetchers(supportedCapabilities); fetcher =
-   * fetchers.getBlockDataFetcher(); }
-   */
 
   @Test
   public void bothNumberAndHashThrows() throws Exception {
@@ -58,14 +38,13 @@ public class BlockDataFetcherTest extends AbstractDataFetcherTest {
 
   @Test
   public void onlyNumber() throws Exception {
-    // final Hash fakedHash = Hash.hash(BytesValue.of(1));
+
     when(environment.getArgument(eq("number"))).thenReturn(UnsignedLong.valueOf(1));
     when(environment.getArgument(eq("hash"))).thenReturn(null);
 
     when(environment.getContext()).thenReturn(context);
     when(context.getBlockchainQuery()).thenReturn(query);
 
-    // thrown.expect(CustomException.class);
     fetcher.get(environment);
   }
 }
