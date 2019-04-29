@@ -24,11 +24,8 @@ import java.util.List;
 import java.util.Optional;
 
 import graphql.schema.DataFetchingEnvironment;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class NormalBlockAdapter extends BlockAdapterBase {
-  private static final Logger LOG = LogManager.getLogger();
 
   public NormalBlockAdapter(
       final BlockWithMetadata<TransactionWithMetadata, Hash> blockWithMetaData) {
@@ -54,11 +51,9 @@ public class NormalBlockAdapter extends BlockAdapterBase {
     BlockchainQuery query = getBlockchainQuery(environment);
     List<Hash> ommers = blockWithMetaData.getOmmers();
     List<UncleBlockAdapter> results = new ArrayList<UncleBlockAdapter>();
-    LOG.info("here  ommers size:  " + ommers.size());
     Hash hash = blockWithMetaData.getHeader().getHash();
     for (int i = 0; i < ommers.size(); i++) {
       Optional<BlockHeader> header = query.getOmmer(hash, i);
-      LOG.info("here  ommers size:  " + ommers.size());
       header.ifPresent(
           item -> {
             results.add(new UncleBlockAdapter(item));

@@ -32,17 +32,5 @@ public class GraphQLRpcTestHelper {
     final Set<String> fieldNames = json.fieldNames();
     assertThat(fieldNames.size()).isEqualTo(1);
     assertThat(fieldNames.contains("errors")).isTrue();
-
-    /*
-     * // Check error format final JsonObject error = json.getJsonObject("error");
-     * final Set<String> errorFieldNames = error.fieldNames();
-     * assertThat(errorFieldNames.size()).isEqualTo(2);
-     * assertThat(errorFieldNames.contains("code")).isTrue();
-     * assertThat(errorFieldNames.contains("message")).isTrue();
-     *
-     * // Check error field values
-     * assertThat(error.getInteger("code")).isEqualTo(errorCode);
-     * assertThat(error.getString("message")).isEqualTo(errorMessage);
-     */
   }
 }

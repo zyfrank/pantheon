@@ -94,9 +94,6 @@ public class GraphQLRpcHttpServiceTest {
   protected static List<Block> BLOCKS;
   protected static ProtocolSchedule<Void> PROTOCOL_SCHEDULE;
 
-  // protected static final Collection<RpcApi> JSON_RPC_APIS =
-  // Arrays.asList(RpcApis.ETH, RpcApis.NET, RpcApis.WEB3,
-  // RpcApis.ADMIN);
   protected final GraphQLRpcTestHelper testHelper = new GraphQLRpcTestHelper();
 
   @BeforeClass
@@ -106,18 +103,14 @@ public class GraphQLRpcHttpServiceTest {
     synchronizer = mock(Synchronizer.class);
     graphQL = mock(GraphQL.class);
     stateArchive = createInMemoryWorldStateArchive();
-    // GENESIS_CONFIG.writeStateTo(stateArchive.getMutable());
 
-    // blockchain = createInMemoryBlockchain(GENESIS_BLOCK);
     blockchain = mock(Blockchain.class);
     miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
-    // dataFetcherContext = new GraphQLDataFetcherContext(blockchain, stateArchive,
-    // PROTOCOL_SCHEDULE, mock(TransactionPool.class), miningCoordinatorMock,
-    // synchronizer);
+
     dataFetcherContext = mock(GraphQLDataFetcherContext.class);
     when(dataFetcherContext.getBlockchainQuery()).thenReturn(blockchainQueries);
     when(dataFetcherContext.getMiningCoordinator()).thenReturn(miningCoordinatorMock);
-    // when(dataFetcherContext.getProtocolSchedule()).thenReturn(PROTOCOL_SCHEDULE);
+
     when(dataFetcherContext.getTransactionPool()).thenReturn(mock(TransactionPool.class));
     when(dataFetcherContext.getSynchronizer()).thenReturn(synchronizer);
 
@@ -313,7 +306,6 @@ public class GraphQLRpcHttpServiceTest {
     try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
       assertThat(resp.code()).isEqualTo(200);
       final String jsonStr = resp.body().string();
-      System.out.println(jsonStr);
       final JsonObject json = new JsonObject(jsonStr);
       testHelper.assertValidGraphQLRpcResult(json);
       int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
@@ -338,7 +330,6 @@ public class GraphQLRpcHttpServiceTest {
     try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
       assertThat(resp.code()).isEqualTo(200);
       final String jsonStr = resp.body().string();
-      System.out.println(jsonStr);
       final JsonObject json = new JsonObject(jsonStr);
       testHelper.assertValidGraphQLRpcResult(json);
       int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
@@ -363,7 +354,6 @@ public class GraphQLRpcHttpServiceTest {
     try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
       assertThat(resp.code()).isEqualTo(200);
       final String jsonStr = resp.body().string();
-      System.out.println(jsonStr);
       final JsonObject json = new JsonObject(jsonStr);
       testHelper.assertValidGraphQLRpcResult(json);
       int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");

@@ -98,8 +98,6 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
 
   protected WorldStateArchive stateArchive;
 
-  // protected FilterManager filterManager;
-
   protected ProtocolContext<Void> context;
 
   @BeforeClass
@@ -146,26 +144,17 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
     when(miningCoordinatorMock.getMinTransactionGasPrice()).thenReturn(Wei.of(16));
 
     final TransactionPool transactionPoolMock = mock(TransactionPool.class);
-    // final EthHashMiningCoordinator miningCoordinatorMock =
-    // mock(EthHashMiningCoordinator.class);
+
     when(transactionPoolMock.addLocalTransaction(any(Transaction.class)))
         .thenReturn(ValidationResult.valid());
     final PendingTransactions pendingTransactionsMock = mock(PendingTransactions.class);
     when(transactionPoolMock.getPendingTransactions()).thenReturn(pendingTransactionsMock);
-    // final PrivacyParameters privacyParameters = mock(PrivacyParameters.class);
+
     stateArchive = createInMemoryWorldStateArchive();
     GENESIS_CONFIG.writeStateTo(stateArchive.getMutable());
 
     blockchain = createInMemoryBlockchain(GENESIS_BLOCK);
     context = new ProtocolContext<>(blockchain, stateArchive, null);
-
-    // final BlockchainQueries blockchainQueries = new BlockchainQueries(blockchain,
-    // stateArchive);
-    // final FilterIdGenerator filterIdGenerator = mock(FilterIdGenerator.class);
-    // final FilterRepository filterRepository = new FilterRepository();
-    // when(filterIdGenerator.nextId()).thenReturn("0x1");
-    // filterManager = new FilterManager(blockchainQueries, transactionPoolMock,
-    // filterIdGenerator, filterRepository);
 
     final Set<Capability> supportedCapabilities = new HashSet<>();
     supportedCapabilities.add(EthProtocol.ETH62);
