@@ -15,6 +15,7 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
+import tech.pegasys.pantheon.ethereum.core.Transaction;
 import tech.pegasys.pantheon.ethereum.core.TransactionReceipt;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
@@ -53,9 +54,12 @@ public class TransactionAdapter extends AdapterBase {
 
   public Optional<AccountAdapter> getFrom(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
+    long blockNumber = transactionWithMetadata.getBlockNumber();
     UnsignedLong bn = environment.getArgument("block");
-
-    Optional<MutableWorldState> ws = query.getWorldState(bn.longValue());
+    if (bn != null) {
+      blockNumber = bn.longValue();
+    }
+    Optional<MutableWorldState> ws = query.getWorldState(blockNumber);
     if (ws.isPresent()) {
       return Optional.of(
           new AccountAdapter(ws.get().get(transactionWithMetadata.getTransaction().getSender())));
@@ -65,12 +69,17 @@ public class TransactionAdapter extends AdapterBase {
 
   public Optional<AccountAdapter> getTo(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
-    UnsignedLong to = environment.getArgument("block");
-
-    Optional<MutableWorldState> ws = query.getWorldState(to.longValue());
+    long blockNumber = transactionWithMetadata.getBlockNumber();
+    UnsignedLong bn = environment.getArgument("block");
+    if (bn != null) {
+      blockNumber = bn.longValue();
+    }
+    Optional<MutableWorldState> ws = query.getWorldState(blockNumber);
     if (ws.isPresent()) {
-      return Optional.of(
-          new AccountAdapter(ws.get().get(transactionWithMetadata.getTransaction().getSender())));
+      Optional<Address> to = transactionWithMetadata.getTransaction().getTo();
+      if (to.isPresent()) {
+        return Optional.of(new AccountAdapter(ws.get().get(to.get())));
+      }
     }
     return Optional.empty();
   }
@@ -102,14 +111,26 @@ public class TransactionAdapter extends AdapterBase {
 
   public Optional<UnsignedLong> getStatus(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
-    Optional<TransactionReceiptWithMetadata> rpt =
-        query.transactionReceiptByTransactionHash(transactionWithMetadata.getTransaction().hash());
-    Optional<UnsignedLong> result = Optional.empty();
-    if (rpt.isPresent()) {
-      TransactionReceipt receipt = rpt.get().getReceipt();
-      result = Optional.of(UnsignedLong.valueOf(receipt.getStatus()));
+    Transaction tran = transactionWithMetadata.getTransaction();
+    if (tran != null) {
+      try {
+        Hash hash = tran.hash();
+        if (hash != null) {
+          Optional<TransactionReceiptWithMetadata> rpt =
+              query.transactionReceiptByTransactionHash(hash);
+          if (rpt.isPresent()) {
+            TransactionReceipt receipt = rpt.get().getReceipt();
+            if (receipt != null) {
+              return Optional.of(UnsignedLong.valueOf(receipt.getStatus()));
+            }
+          }
+        }
+      } catch (Exception e) {
+        return Optional.empty();
+      }
     }
-    return result;
+
+    return Optional.empty();
   }
 
   public Optional<UnsignedLong> getGasUsed(final DataFetchingEnvironment environment) {
@@ -137,10 +158,16 @@ public class TransactionAdapter extends AdapterBase {
     boolean contractCreated = transactionWithMetadata.getTransaction().isContractCreation();
     if (contractCreated) {
       Optional<Address> addr = transactionWithMetadata.getTransaction().getTo();
+
       if (addr.isPresent()) {
         BlockchainQuery query = getBlockchainQuery(environment);
+        long blockNumber = transactionWithMetadata.getBlockNumber();
         UnsignedLong bn = environment.getArgument("block");
-        Optional<MutableWorldState> ws = query.getWorldState(bn.longValue());
+        if (bn != null) {
+          blockNumber = bn.longValue();
+        }
+
+        Optional<MutableWorldState> ws = query.getWorldState(blockNumber);
         if (ws.isPresent()) {
           return Optional.of(new AccountAdapter(ws.get().get(addr.get())));
         }

@@ -84,12 +84,15 @@ public class BlockAdapter extends AdapterBase {
 
   public Optional<AccountAdapter> getMiner(final DataFetchingEnvironment environment) {
     BlockchainQuery query = getBlockchainQuery(environment);
-    UnsignedLong blockNo = environment.getArgument("block");
-
+    long blockNumber = blockWithMetaData.getHeader().getNumber();
+    UnsignedLong bn = environment.getArgument("block");
+    if (bn != null) {
+      blockNumber = bn.longValue();
+    }
     return Optional.of(
         new AccountAdapter(
             query
-                .getWorldState(blockNo.longValue())
+                .getWorldState(blockNumber)
                 .get()
                 .get(blockWithMetaData.getHeader().getCoinbase())));
   }

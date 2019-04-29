@@ -1,10 +1,10 @@
 {
   "request": 
     
-    "{block (number : \"0x1e\") {transactions{hash} timestamp difficulty totalDifficulty gasUsed gasLimit hash nonce ommerCount logsBloom mixHash ommerHash extraData stateRoot receiptsRoot transactionCount transactionsRoot}} ",
+    "{block (number : \"0x1e\") {transactions{hash} timestamp difficulty totalDifficulty gasUsed gasLimit hash nonce ommerCount logsBloom mixHash ommerHash extraData stateRoot receiptsRoot transactionCount transactionsRoot ommers{hash} ommerAt(index : 1){hash} miner{address} account(address: \"0x6295ee1b4f6dd65047762f924ecd367c17eabf8f\"){balance} parent{hash} }} ",
 
 
-  "response":  {
+  "response":{
     "data" : {
       "block" : {
         "transactions" : [ {
@@ -25,7 +25,18 @@
         "stateRoot" : "0xdb46d6bb168130fe2cb60b4b24346137b5741f11283e0d7edace65c5f5466b2e",
         "receiptsRoot" : "0x88b3b304b058b39791c26fdb94a05cc16ce67cf8f84f7348cb3c60c0ff342d0d",
         "transactionCount" : 1,
-        "transactionsRoot" : "0x5a8d5d966b48e1331ae19eb459eb28882cdc7654e615d37774b79204e875dc01"
+        "transactionsRoot" : "0x5a8d5d966b48e1331ae19eb459eb28882cdc7654e615d37774b79204e875dc01",
+        "ommers" : [ ],
+        "ommerAt" : null,
+        "miner" : {
+          "address" : "0x8888f1f195afa192cfee860698584c030f4c9db1"
+        },
+        "account" : {
+          "balance" : "0x12c"
+        },
+        "parent" : {
+          "hash" : "0xf8cfa377bd766cdf22edb388dd08cc149e85d24f2796678c835f3c54ab930803"
+        }
       }
     }
   },
