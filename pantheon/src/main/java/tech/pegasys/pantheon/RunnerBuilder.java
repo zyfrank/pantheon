@@ -49,6 +49,7 @@ import tech.pegasys.pantheon.ethereum.mainnet.ProtocolSchedule;
 import tech.pegasys.pantheon.ethereum.p2p.ConnectingToLocalNodeException;
 import tech.pegasys.pantheon.ethereum.p2p.InsufficientPeersPermissioningProvider;
 import tech.pegasys.pantheon.ethereum.p2p.NetworkRunner;
+import tech.pegasys.pantheon.ethereum.p2p.NetworkRunner.NetworkBuilder;
 import tech.pegasys.pantheon.ethereum.p2p.NoopP2PNetwork;
 import tech.pegasys.pantheon.ethereum.p2p.api.P2PNetwork;
 import tech.pegasys.pantheon.ethereum.p2p.api.ProtocolManager;
@@ -56,7 +57,7 @@ import tech.pegasys.pantheon.ethereum.p2p.config.DiscoveryConfiguration;
 import tech.pegasys.pantheon.ethereum.p2p.config.NetworkingConfiguration;
 import tech.pegasys.pantheon.ethereum.p2p.config.RlpxConfiguration;
 import tech.pegasys.pantheon.ethereum.p2p.config.SubProtocolConfiguration;
-import tech.pegasys.pantheon.ethereum.p2p.netty.NettyP2PNetwork;
+import tech.pegasys.pantheon.ethereum.p2p.network.DefaultP2PNetwork;
 import tech.pegasys.pantheon.ethereum.p2p.peers.DefaultPeer;
 import tech.pegasys.pantheon.ethereum.p2p.peers.Peer;
 import tech.pegasys.pantheon.ethereum.p2p.peers.PeerBlacklist;
@@ -79,6 +80,7 @@ import tech.pegasys.pantheon.util.enode.EnodeURL;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -87,6 +89,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import graphql.GraphQL;
 import io.vertx.core.Vertx;
@@ -280,27 +283,26 @@ public class RunnerBuilder {
                         .findFirst())
             .map(n -> (NodeLocalConfigPermissioningController) n);
 
+    NetworkBuilder inactiveNetwork = (caps) -> new NoopP2PNetwork();
+    NetworkBuilder activeNetwork =
+        (caps) ->
+            DefaultP2PNetwork.builder()
+                .vertx(vertx)
+                .keyPair(keyPair)
+                .nodeLocalConfigPermissioningController(nodeWhitelistController)
+                .config(networkConfig)
+                .peerBlacklist(peerBlacklist)
+                .metricsSystem(metricsSystem)
+                .supportedCapabilities(caps)
+                .nodePermissioningController(nodePermissioningController)
+                .blockchain(context.getBlockchain())
+                .build();
+
     final NetworkRunner networkRunner =
         NetworkRunner.builder()
             .protocolManagers(protocolManagers)
             .subProtocols(subProtocols)
-            .network(
-                p2pEnabled
-                    ? caps ->
-                        new NettyP2PNetwork(
-                            vertx,
-                            keyPair,
-                            networkConfig,
-                            caps,
-                            peerBlacklist,
-                            metricsSystem,
-                            nodeWhitelistController,
-                            nodePermissioningController,
-                            // TODO this dependency on the Blockchain will be removed in PAN-2442
-                            nodePermissioningController.isPresent()
-                                ? context.getBlockchain()
-                                : null)
-                    : caps -> new NoopP2PNetwork())
+            .network(p2pEnabled ? activeNetwork : inactiveNetwork)
             .metricsSystem(metricsSystem)
             .build();
 
@@ -452,15 +454,19 @@ public class RunnerBuilder {
       final List<EnodeURL> bootnodesAsEnodeURLs,
       final Synchronizer synchronizer,
       final TransactionSimulator transactionSimulator) {
+    Collection<EnodeURL> fixedNodes = getFixedNodes(bootnodesAsEnodeURLs, staticNodes);
     return permissioningConfiguration.map(
         config ->
             new NodePermissioningControllerFactory()
-                .create(
-                    config,
-                    synchronizer,
-                    bootnodesAsEnodeURLs,
-                    getSelfEnode(),
-                    transactionSimulator));
+                .create(config, synchronizer, fixedNodes, getSelfEnode(), transactionSimulator));
+  }
+
+  @VisibleForTesting
+  public static Collection<EnodeURL> getFixedNodes(
+      final Collection<EnodeURL> someFixedNodes, final Collection<EnodeURL> moreFixedNodes) {
+    Collection<EnodeURL> fixedNodes = new ArrayList<>(someFixedNodes);
+    fixedNodes.addAll(moreFixedNodes);
+    return fixedNodes;
   }
 
   private FilterManager createFilterManager(
