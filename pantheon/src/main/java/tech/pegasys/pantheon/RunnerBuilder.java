@@ -46,7 +46,6 @@ import tech.pegasys.pantheon.ethereum.jsonrpc.websocket.subscription.pending.Pen
 import tech.pegasys.pantheon.ethereum.jsonrpc.websocket.subscription.pending.PendingTransactionSubscriptionService;
 import tech.pegasys.pantheon.ethereum.jsonrpc.websocket.subscription.syncing.SyncingSubscriptionService;
 import tech.pegasys.pantheon.ethereum.mainnet.ProtocolSchedule;
-import tech.pegasys.pantheon.ethereum.p2p.ConnectingToLocalNodeException;
 import tech.pegasys.pantheon.ethereum.p2p.InsufficientPeersPermissioningProvider;
 import tech.pegasys.pantheon.ethereum.p2p.NetworkRunner;
 import tech.pegasys.pantheon.ethereum.p2p.NetworkRunner.NetworkBuilder;
@@ -59,7 +58,6 @@ import tech.pegasys.pantheon.ethereum.p2p.config.RlpxConfiguration;
 import tech.pegasys.pantheon.ethereum.p2p.config.SubProtocolConfiguration;
 import tech.pegasys.pantheon.ethereum.p2p.network.DefaultP2PNetwork;
 import tech.pegasys.pantheon.ethereum.p2p.peers.DefaultPeer;
-import tech.pegasys.pantheon.ethereum.p2p.peers.Peer;
 import tech.pegasys.pantheon.ethereum.p2p.peers.PeerBlacklist;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
 import tech.pegasys.pantheon.ethereum.p2p.wire.SubProtocol;
@@ -113,15 +111,6 @@ public class RunnerBuilder {
   private MetricsSystem metricsSystem;
   private Optional<PermissioningConfiguration> permissioningConfiguration = Optional.empty();
   private Collection<EnodeURL> staticNodes = Collections.emptyList();
-
-  private EnodeURL getSelfEnode() {
-    BytesValue nodeId = pantheonController.getLocalNodeKeyPair().getPublicKey().getEncodedBytes();
-    return EnodeURL.builder()
-        .nodeId(nodeId)
-        .ipAddress(p2pAdvertisedHost)
-        .listeningPort(p2pListenPort)
-        .build();
-  }
 
   public RunnerBuilder vertx(final Vertx vertx) {
     this.vertx = vertx;
@@ -271,8 +260,10 @@ public class RunnerBuilder {
         new TransactionSimulator(
             context.getBlockchain(), context.getWorldStateArchive(), protocolSchedule);
 
+    BytesValue localNodeId = keyPair.getPublicKey().getEncodedBytes();
     final Optional<NodePermissioningController> nodePermissioningController =
-        buildNodePermissioningController(bootnodesAsEnodeURLs, synchronizer, transactionSimulator);
+        buildNodePermissioningController(
+            bootnodesAsEnodeURLs, synchronizer, transactionSimulator, localNodeId);
 
     final Optional<NodeLocalConfigPermissioningController> nodeWhitelistController =
         nodePermissioningController
@@ -306,11 +297,12 @@ public class RunnerBuilder {
             .metricsSystem(metricsSystem)
             .build();
 
+    final P2PNetwork network = networkRunner.getNetwork();
     nodePermissioningController.ifPresent(
         n ->
             n.setInsufficientPeersPermissioningProvider(
                 new InsufficientPeersPermissioningProvider(
-                    networkRunner.getNetwork(), getSelfEnode(), bootnodesAsEnodeURLs)));
+                    networkRunner.getNetwork(), network::getLocalEnode, bootnodesAsEnodeURLs)));
 
     final TransactionPool transactionPool = pantheonController.getTransactionPool();
     final MiningCoordinator miningCoordinator = pantheonController.getMiningCoordinator();
@@ -330,14 +322,9 @@ public class RunnerBuilder {
 
     final P2PNetwork peerNetwork = networkRunner.getNetwork();
 
-    staticNodes.forEach(
-        enodeURL -> {
-          final Peer peer = DefaultPeer.fromEnodeURL(enodeURL);
-          try {
-            peerNetwork.addMaintainConnectionPeer(peer);
-          } catch (ConnectingToLocalNodeException ex) {
-          }
-        });
+    staticNodes.stream()
+        .map(DefaultPeer::fromEnodeURL)
+        .forEach(peerNetwork::addMaintainConnectionPeer);
 
     Optional<JsonRpcHttpService> jsonRpcHttpService = Optional.empty();
     if (jsonRpcConfiguration.isEnabled()) {
@@ -453,12 +440,13 @@ public class RunnerBuilder {
   private Optional<NodePermissioningController> buildNodePermissioningController(
       final List<EnodeURL> bootnodesAsEnodeURLs,
       final Synchronizer synchronizer,
-      final TransactionSimulator transactionSimulator) {
+      final TransactionSimulator transactionSimulator,
+      final BytesValue localNodeId) {
     Collection<EnodeURL> fixedNodes = getFixedNodes(bootnodesAsEnodeURLs, staticNodes);
     return permissioningConfiguration.map(
         config ->
             new NodePermissioningControllerFactory()
-                .create(config, synchronizer, fixedNodes, getSelfEnode(), transactionSimulator));
+                .create(config, synchronizer, fixedNodes, localNodeId, transactionSimulator));
   }
 
   @VisibleForTesting
