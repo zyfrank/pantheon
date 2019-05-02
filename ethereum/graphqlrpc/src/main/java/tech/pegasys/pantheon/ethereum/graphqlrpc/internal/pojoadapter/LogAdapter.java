@@ -14,7 +14,6 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.LogTopic;
-import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.LogWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
@@ -28,9 +27,9 @@ import java.util.Optional;
 import graphql.schema.DataFetchingEnvironment;
 
 public class LogAdapter extends AdapterBase {
-  private LogWithMetadata logWithMetadata;
+  private final LogWithMetadata logWithMetadata;
 
-  public LogAdapter(final LogWithMetadata logWithMetadata) {
+  LogAdapter(final LogWithMetadata logWithMetadata) {
     this.logWithMetadata = logWithMetadata;
   }
 
@@ -38,10 +37,11 @@ public class LogAdapter extends AdapterBase {
     return Optional.of(logWithMetadata.getLogIndex());
   }
 
+  @SuppressWarnings("unused")
   public List<Bytes32> getTopics() {
-    List<LogTopic> topics = logWithMetadata.getTopics();
-    List<Bytes32> result = new ArrayList<Bytes32>();
-    for (LogTopic topic : topics) {
+    final List<LogTopic> topics = logWithMetadata.getTopics();
+    final List<Bytes32> result = new ArrayList<>();
+    for (final LogTopic topic : topics) {
       result.add(Bytes32.leftPad(topic));
     }
     return result;
@@ -51,28 +51,30 @@ public class LogAdapter extends AdapterBase {
     return Optional.of(logWithMetadata.getData());
   }
 
+  @SuppressWarnings("unused")
   public Optional<TransactionAdapter> getTransaction(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = getBlockchainQuery(environment);
-    Hash hash = logWithMetadata.getTransactionHash();
-    Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
-    return tran.map(item -> new TransactionAdapter(item));
+    final BlockchainQuery query = getBlockchainQuery(environment);
+    final Hash hash = logWithMetadata.getTransactionHash();
+    final Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
+    return tran.map(TransactionAdapter::new);
   }
 
+  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = getBlockchainQuery(environment);
+    final BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = logWithMetadata.getBlockNumber();
-    Long bn = environment.getArgument("block");
+    final Long bn = environment.getArgument("block");
     if (bn != null) {
-      blockNumber = bn.longValue();
+      blockNumber = bn;
     }
 
-    Optional<MutableWorldState> ws = query.getWorldState(blockNumber);
-    if (ws.isPresent()) {
-      Hash hash = logWithMetadata.getTransactionHash();
-      Optional<TransactionWithMetadata> tran = query.transactionByHash(hash);
-      return tran.map(ele -> new AccountAdapter(ws.get().get(ele.getTransaction().getSender())));
-    }
-    ;
-    return Optional.empty();
+    return query
+        .getWorldState(blockNumber)
+        .flatMap(
+            ws ->
+                query
+                    .transactionByHash(logWithMetadata.getTransactionHash())
+                    .flatMap(tx -> tx.getTransaction().getTo())
+                    .map(addr -> new AccountAdapter(ws.get(addr))));
   }
 }
