@@ -121,7 +121,7 @@ public class GraphQLRpcHttpService {
                 .setDeleteUploadedFilesOnEnd(true));
     router.route("/").method(HttpMethod.GET).handler(this::handleEmptyRequest);
     router
-        .route("/")
+        .route("/graphql")
         .method(HttpMethod.POST)
         .produces(APPLICATION_JSON)
         .handler(this::handleGraphQLRPCRequest);

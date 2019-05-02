@@ -17,7 +17,7 @@ import com.google.common.base.Objects;
 
 public class GraphQLRpcConfiguration {
   private static final String DEFAULT_GRAPHQL_RPC_HOST = "127.0.0.1";
-  public static final int DEFAULT_GRAPHQL_RPC_PORT = 8645;
+  public static final int DEFAULT_GRAPHQL_RPC_PORT = 8547;
 
   private boolean enabled;
   private int port;
