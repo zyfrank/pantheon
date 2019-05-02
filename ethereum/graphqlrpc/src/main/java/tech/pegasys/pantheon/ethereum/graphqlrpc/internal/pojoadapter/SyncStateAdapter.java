@@ -17,29 +17,34 @@ import tech.pegasys.pantheon.ethereum.core.SyncStatus;
 import java.util.Optional;
 
 public class SyncStateAdapter {
-  private SyncStatus syncStatus;
+  private final SyncStatus syncStatus;
 
   public SyncStateAdapter(final SyncStatus syncStatus) {
     this.syncStatus = syncStatus;
   }
 
+  @SuppressWarnings("unused")
   public Optional<Long> getStartingBlock() {
-    return Optional.of(Long.valueOf(syncStatus.getStartingBlock()));
+    return Optional.of(syncStatus.getStartingBlock());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Long> getCurrentBlock() {
-    return Optional.of(Long.valueOf(syncStatus.getCurrentBlock()));
+    return Optional.of(syncStatus.getCurrentBlock());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Long> getHighestBlock() {
-    return Optional.of(Long.valueOf(syncStatus.getHighestBlock()));
+    return Optional.of(syncStatus.getHighestBlock());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Long> getPulledStates() {
     // currently synchronizer has no this information?
     return Optional.empty();
   }
 
+  @SuppressWarnings("unused")
   public Optional<Long> getKnownStates() {
     // currently synchronizer has no this information?
     return Optional.empty();

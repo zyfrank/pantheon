@@ -33,15 +33,15 @@ public class AddressScalarTest {
   private AddressScalar scalar;
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private String addrStr = "0x6295ee1b4f6dd65047762f924ecd367c17eabf8f";
-  private String invalidAddrStr = "0x295ee1b4f6dd65047762f924ecd367c17eabf8f";
-  private Address addr = Address.fromHexString(addrStr);
-  private StringValue addrValue = StringValue.newStringValue(addrStr).build();
-  private StringValue invalidAddrValue = StringValue.newStringValue(invalidAddrStr).build();
+  private final String addrStr = "0x6295ee1b4f6dd65047762f924ecd367c17eabf8f";
+  private final String invalidAddrStr = "0x295ee1b4f6dd65047762f924ecd367c17eabf8f";
+  private final Address addr = Address.fromHexString(addrStr);
+  private final StringValue addrValue = StringValue.newStringValue(addrStr).build();
+  private final StringValue invalidAddrValue = StringValue.newStringValue(invalidAddrStr).build();
 
   @Test
   public void pareValueTest() {
-    String result = (String) scalar.getCoercing().parseValue(addr);
+    final String result = (String) scalar.getCoercing().parseValue(addr);
     assertThat(result).isEqualTo(addrStr);
   }
 
@@ -55,7 +55,7 @@ public class AddressScalarTest {
   @Test
   public void serializeTest() {
 
-    String result = (String) scalar.getCoercing().serialize(addr);
+    final String result = (String) scalar.getCoercing().serialize(addr);
     assertThat(result).isEqualTo(addrStr);
   }
 
@@ -68,7 +68,7 @@ public class AddressScalarTest {
 
   @Test
   public void pareLiteralTest() {
-    Address result = (Address) scalar.getCoercing().parseLiteral(addrValue);
+    final Address result = (Address) scalar.getCoercing().parseLiteral(addrValue);
     assertThat(result).isEqualTo(addr);
   }
 

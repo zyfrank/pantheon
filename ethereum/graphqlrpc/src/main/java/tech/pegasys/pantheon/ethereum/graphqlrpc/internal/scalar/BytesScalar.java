@@ -33,7 +33,7 @@ public class BytesScalar extends GraphQLScalarType {
           @Override
           public String serialize(final Object input) throws CoercingSerializeException {
             if (input instanceof BytesValue) {
-              return ((BytesValue) input).toString();
+              return input.toString();
             }
             throw new CoercingSerializeException("Unable to serialize " + input + " as an Bytes");
           }
@@ -41,7 +41,7 @@ public class BytesScalar extends GraphQLScalarType {
           @Override
           public String parseValue(final Object input) throws CoercingParseValueException {
             if (input instanceof BytesValue) {
-              return ((BytesValue) input).toString();
+              return input.toString();
             }
             throw new CoercingParseValueException(
                 "Unable to parse variable value " + input + " as an Bytes");
@@ -50,15 +50,13 @@ public class BytesScalar extends GraphQLScalarType {
           @Override
           public BytesValue parseLiteral(final Object input) throws CoercingParseLiteralException {
             if (!(input instanceof StringValue)) {
-              throw new CoercingParseLiteralException(
-                  "Value is not any Bytes : '" + String.valueOf(input) + "'");
+              throw new CoercingParseLiteralException("Value is not any Bytes : '" + input + "'");
             }
-            BytesValue result;
+            final BytesValue result;
             try {
               result = BytesValue.fromHexString(((StringValue) input).getValue());
-            } catch (IllegalArgumentException e) {
-              throw new CoercingParseLiteralException(
-                  "Value is not any Bytes : '" + String.valueOf(input) + "'");
+            } catch (final IllegalArgumentException e) {
+              throw new CoercingParseLiteralException("Value is not any Bytes : '" + input + "'");
             }
             return result;
           }

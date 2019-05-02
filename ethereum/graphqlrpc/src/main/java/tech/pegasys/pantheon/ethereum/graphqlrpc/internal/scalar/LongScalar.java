@@ -35,6 +35,13 @@ public class LongScalar extends GraphQLScalarType {
           public Number serialize(final Object input) throws CoercingSerializeException {
             if (input instanceof Number) {
               return (Number) input;
+            } else if (input instanceof String) {
+              final String value = ((String) input).toLowerCase();
+              if (value.startsWith("0x")) {
+                return Bytes32.fromHexStringLenient(value).asUInt256().toLong();
+              } else {
+                return Long.parseLong(value);
+              }
             }
             throw new CoercingSerializeException("Unable to serialize " + input + " as an Long");
           }
@@ -43,6 +50,13 @@ public class LongScalar extends GraphQLScalarType {
           public Number parseValue(final Object input) throws CoercingParseValueException {
             if (input instanceof Number) {
               return (Number) input;
+            } else if (input instanceof String) {
+              final String value = ((String) input).toLowerCase();
+              if (value.startsWith("0x")) {
+                return Bytes32.fromHexStringLenient(value).asUInt256().toLong();
+              } else {
+                return Long.parseLong(value);
+              }
             }
             throw new CoercingParseValueException(
                 "Unable to parse variable value " + input + " as an Long");

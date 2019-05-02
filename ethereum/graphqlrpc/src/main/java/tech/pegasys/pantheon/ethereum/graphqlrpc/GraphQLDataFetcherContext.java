@@ -22,11 +22,11 @@ import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
 
 public class GraphQLDataFetcherContext {
 
-  private BlockchainQuery blockchain;
-  private MiningCoordinator miningCoordinator;
-  private Synchronizer synchronizer;
-  private ProtocolSchedule<?> protocolSchedule;
-  private TransactionPool transactionPool;
+  private final BlockchainQuery blockchain;
+  private final MiningCoordinator miningCoordinator;
+  private final Synchronizer synchronizer;
+  private final ProtocolSchedule<?> protocolSchedule;
+  private final TransactionPool transactionPool;
 
   public GraphQLDataFetcherContext(
       final Blockchain blockchain,

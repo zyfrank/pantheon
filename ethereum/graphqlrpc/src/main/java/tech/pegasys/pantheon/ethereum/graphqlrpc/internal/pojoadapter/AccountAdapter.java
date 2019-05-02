@@ -23,7 +23,7 @@ import java.util.Optional;
 import graphql.schema.DataFetchingEnvironment;
 
 public class AccountAdapter extends AdapterBase {
-  private Account account;
+  private final Account account;
 
   public AccountAdapter(final Account account) {
     this.account = account;
@@ -38,15 +38,16 @@ public class AccountAdapter extends AdapterBase {
   }
 
   public Optional<Long> getTransactionCount() {
-    return Optional.of(Long.valueOf(account.getNonce()));
+    return Optional.of(account.getNonce());
   }
 
   public Optional<BytesValue> getCode() {
     return Optional.of(account.getCode());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Bytes32> getStorage(final DataFetchingEnvironment environment) {
-    Bytes32 slot = environment.getArgument("slot");
+    final Bytes32 slot = environment.getArgument("slot");
     return Optional.of(account.getStorageValue(slot.asUInt256()).getBytes());
   }
 }

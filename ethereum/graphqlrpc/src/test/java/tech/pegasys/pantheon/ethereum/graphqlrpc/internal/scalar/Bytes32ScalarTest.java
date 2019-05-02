@@ -33,14 +33,14 @@ public class Bytes32ScalarTest {
   private Bytes32Scalar scalar;
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private String str = "0x1234567812345678123456781234567812345678123456781234567812345678";
-  private Bytes32 value = Bytes32.fromHexString(str);
-  private StringValue strValue = StringValue.newStringValue(str).build();
-  private StringValue invalidStrValue = StringValue.newStringValue("0xgh").build();
+  private final String str = "0x1234567812345678123456781234567812345678123456781234567812345678";
+  private final Bytes32 value = Bytes32.fromHexString(str);
+  private final StringValue strValue = StringValue.newStringValue(str).build();
+  private final StringValue invalidStrValue = StringValue.newStringValue("0xgh").build();
 
   @Test
   public void pareValueTest() {
-    String result = (String) scalar.getCoercing().parseValue(value);
+    final String result = (String) scalar.getCoercing().parseValue(value);
     assertThat(result).isEqualTo(str);
   }
 
@@ -52,7 +52,7 @@ public class Bytes32ScalarTest {
 
   @Test
   public void serializeTest() {
-    String result = (String) scalar.getCoercing().serialize(value);
+    final String result = (String) scalar.getCoercing().serialize(value);
     assertThat(result).isEqualTo(str);
   }
 
@@ -64,7 +64,7 @@ public class Bytes32ScalarTest {
 
   @Test
   public void pareLiteralTest() {
-    Bytes32 result = (Bytes32) scalar.getCoercing().parseLiteral(strValue);
+    final Bytes32 result = (Bytes32) scalar.getCoercing().parseLiteral(strValue);
     assertThat(result).isEqualTo(value);
   }
 

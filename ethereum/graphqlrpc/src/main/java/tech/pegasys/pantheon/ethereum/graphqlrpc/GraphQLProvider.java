@@ -38,17 +38,17 @@ public class GraphQLProvider {
 
   public static GraphQL buildGraphQL(final GraphQLDataFetchers graphQLDataFetchers)
       throws IOException {
-    URL url = Resources.getResource("schema.graphqls");
-    String sdl = Resources.toString(url, Charsets.UTF_8);
-    GraphQLSchema graphQLSchema = buildSchema(sdl, graphQLDataFetchers);
+    final URL url = Resources.getResource("schema.graphqls");
+    final String sdl = Resources.toString(url, Charsets.UTF_8);
+    final GraphQLSchema graphQLSchema = buildSchema(sdl, graphQLDataFetchers);
     return GraphQL.newGraphQL(graphQLSchema).build();
   }
 
   private static GraphQLSchema buildSchema(
       final String sdl, final GraphQLDataFetchers graphQLDataFetchers) {
-    TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(sdl);
-    RuntimeWiring runtimeWiring = buildWiring(graphQLDataFetchers);
-    SchemaGenerator schemaGenerator = new SchemaGenerator();
+    final TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(sdl);
+    final RuntimeWiring runtimeWiring = buildWiring(graphQLDataFetchers);
+    final SchemaGenerator schemaGenerator = new SchemaGenerator();
     return schemaGenerator.makeExecutableSchema(typeRegistry, runtimeWiring);
   }
 

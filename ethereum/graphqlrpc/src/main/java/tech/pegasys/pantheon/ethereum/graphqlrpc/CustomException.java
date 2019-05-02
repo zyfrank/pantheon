@@ -25,7 +25,7 @@ import graphql.language.SourceLocation;
 public class CustomException extends RuntimeException implements GraphQLError {
   private final int errorCode;
 
-  public CustomException(final GraphQLRpcError error) {
+  CustomException(final GraphQLRpcError error) {
 
     super(error.getMessage());
 
@@ -34,7 +34,7 @@ public class CustomException extends RuntimeException implements GraphQLError {
 
   @Override
   public Map<String, Object> getExtensions() {
-    Map<String, Object> customAttributes = new LinkedHashMap<>();
+    final Map<String, Object> customAttributes = new LinkedHashMap<>();
 
     customAttributes.put("errorCode", this.errorCode);
     customAttributes.put("errorMessage", this.getMessage());

@@ -24,6 +24,6 @@ public class GraphQLRpcConfigurationTest {
 
     assertThat(configuration.isEnabled()).isFalse();
     assertThat(configuration.getHost()).isEqualTo("127.0.0.1");
-    assertThat(configuration.getPort()).isEqualTo(8645);
+    assertThat(configuration.getPort()).isEqualTo(8547);
   }
 }

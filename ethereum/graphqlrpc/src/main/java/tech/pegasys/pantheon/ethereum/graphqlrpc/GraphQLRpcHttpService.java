@@ -19,7 +19,6 @@ import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcErr
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcResponse;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcResponseType;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcSuccessResponse;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 import tech.pegasys.pantheon.util.NetworkUtility;
 
 import java.net.InetSocketAddress;
@@ -65,10 +64,10 @@ public class GraphQLRpcHttpService {
 
   private HttpServer httpServer;
 
-  private GraphQL graphQL;
+  private final GraphQL graphQL;
 
   // as GraphQL dataFetcher context data
-  private GraphQLDataFetcherContext dataFetcherContext;
+  private final GraphQLDataFetcherContext dataFetcherContext;
 
   /**
    * Construct a GraphQLRpcHttpService handler
@@ -78,15 +77,13 @@ public class GraphQLRpcHttpService {
    * @param config Configuration for the rpc methods being loaded
    * @param graphQL GraphQL engine
    * @param dataFetcherContext DataFetcherContext required by GraphQL to finish it's job
-   * @param metricsSystem The metrics service that activities should be reported to
    */
   public GraphQLRpcHttpService(
       final Vertx vertx,
       final Path dataDir,
       final GraphQLRpcConfiguration config,
       final GraphQL graphQL,
-      final GraphQLDataFetcherContext dataFetcherContext,
-      final MetricsSystem metricsSystem) {
+      final GraphQLDataFetcherContext dataFetcherContext) {
     this.dataDir = dataDir;
 
     validateConfig(config);
@@ -249,11 +246,11 @@ public class GraphQLRpcHttpService {
   }
 
   private GraphQLRpcResponse process(final String requestJson) {
-    ExecutionInput executionInput =
+    final ExecutionInput executionInput =
         ExecutionInput.newExecutionInput().query(requestJson).context(dataFetcherContext).build();
-    ExecutionResult result = graphQL.execute(executionInput);
-    Map<String, Object> toSpecificationResult = result.toSpecification();
-    List<GraphQLError> errors = result.getErrors();
+    final ExecutionResult result = graphQL.execute(executionInput);
+    final Map<String, Object> toSpecificationResult = result.toSpecification();
+    final List<GraphQLError> errors = result.getErrors();
     if (errors.size() == 0) {
       return new GraphQLRpcSuccessResponse(toSpecificationResult);
     } else {

@@ -59,20 +59,18 @@ public class GraphQLDataFetchers {
 
   private final Integer highestEthVersion;
 
-  public DataFetcher<Optional<Integer>> getProtocolVersionDataFetcher() {
-    return dataFetchingEnvironment -> {
-      return Optional.of(highestEthVersion);
-    };
+  DataFetcher<Optional<Integer>> getProtocolVersionDataFetcher() {
+    return dataFetchingEnvironment -> Optional.of(highestEthVersion);
   }
 
-  public DataFetcher<Optional<Bytes32>> getSendRawTransactionDataFetcher() {
+  DataFetcher<Optional<Bytes32>> getSendRawTransactionDataFetcher() {
     return dataFetchingEnvironment -> {
       try {
-        TransactionPool transactionPool =
+        final TransactionPool transactionPool =
             ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getTransactionPool();
-        BytesValue rawTran = (BytesValue) dataFetchingEnvironment.getArgument("data");
+        final BytesValue rawTran = dataFetchingEnvironment.getArgument("data");
 
-        Transaction transaction = Transaction.readFrom(RLP.input(rawTran));
+        final Transaction transaction = Transaction.readFrom(RLP.input(rawTran));
         final ValidationResult<TransactionInvalidReason> validationResult =
             transactionPool.addLocalTransaction(transaction);
         if (validationResult.isValid()) {
@@ -85,39 +83,40 @@ public class GraphQLDataFetchers {
     };
   }
 
-  public DataFetcher<Optional<SyncStateAdapter>> getSyncingDataFetcher() {
+  DataFetcher<Optional<SyncStateAdapter>> getSyncingDataFetcher() {
     return dataFetchingEnvironment -> {
-      Synchronizer synchronizer =
+      final Synchronizer synchronizer =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getSynchronizer();
-      Optional<SyncStatus> syncStatus = synchronizer.getSyncStatus();
-      return syncStatus.map(item -> new SyncStateAdapter(item));
+      final Optional<SyncStatus> syncStatus = synchronizer.getSyncStatus();
+      return syncStatus.map(SyncStateAdapter::new);
     };
   }
 
-  public DataFetcher<Optional<UInt256>> getGasPriceDataFetcher() {
+  DataFetcher<Optional<UInt256>> getGasPriceDataFetcher() {
     return dataFetchingEnvironment -> {
-      MiningCoordinator miningCoordinator =
+      final MiningCoordinator miningCoordinator =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getMiningCoordinator();
 
       return Optional.of(miningCoordinator.getMinTransactionGasPrice().asUInt256());
     };
   }
 
-  public DataFetcher<List<NormalBlockAdapter>> getRangeBlockDataFetcher() {
+  DataFetcher<List<NormalBlockAdapter>> getRangeBlockDataFetcher() {
 
     return dataFetchingEnvironment -> {
-      long from = ((Long) dataFetchingEnvironment.getArgument("from")).longValue();
-      long to = ((Long) dataFetchingEnvironment.getArgument("to")).longValue();
+      final long from = dataFetchingEnvironment.getArgument("from");
+      final long to = dataFetchingEnvironment.getArgument("to");
       if (from > to) {
         throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
       }
 
-      BlockchainQuery blockchain =
+      final BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
 
-      List<NormalBlockAdapter> results = new ArrayList<NormalBlockAdapter>();
+      final List<NormalBlockAdapter> results = new ArrayList<>();
       for (long i = from; i <= to; i++) {
-        BlockWithMetadata<TransactionWithMetadata, Hash> block = blockchain.blockByNumber(i).get();
+        final BlockWithMetadata<TransactionWithMetadata, Hash> block =
+            blockchain.blockByNumber(i).get();
         if (block != null) {
           results.add(new NormalBlockAdapter(block));
         }
@@ -129,17 +128,17 @@ public class GraphQLDataFetchers {
   public DataFetcher<Optional<NormalBlockAdapter>> getBlockDataFetcher() {
 
     return dataFetchingEnvironment -> {
-      BlockchainQuery blockchain =
+      final BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
-      Long number = dataFetchingEnvironment.getArgument("number");
-      Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
+      final Long number = dataFetchingEnvironment.getArgument("number");
+      final Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
       if ((number != null) && (hash != null)) {
         throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
       }
 
       Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block = Optional.empty();
       if (number != null) {
-        block = blockchain.blockByNumber(number.longValue());
+        block = blockchain.blockByNumber(number);
       } else {
         if (hash != null) {
           block = blockchain.blockByHash(Hash.wrap(hash));
@@ -148,18 +147,18 @@ public class GraphQLDataFetchers {
       if (!block.isPresent()) {
         block = blockchain.latestBlock();
       }
-      return block.map(item -> new NormalBlockAdapter(item));
+      return block.map(NormalBlockAdapter::new);
     };
   }
 
-  public DataFetcher<AccountAdapter> getAccountDataFetcher() {
+  DataFetcher<AccountAdapter> getAccountDataFetcher() {
     return dataFetchingEnvironment -> {
-      BlockchainQuery blockchain =
+      final BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
-      Address addr = dataFetchingEnvironment.getArgument("address");
-      Long bn = dataFetchingEnvironment.getArgument("blockNumber");
+      final Address addr = dataFetchingEnvironment.getArgument("address");
+      final Long bn = dataFetchingEnvironment.getArgument("blockNumber");
       if (bn != null) {
-        Optional<MutableWorldState> ws = blockchain.getWorldState(bn.longValue());
+        final Optional<MutableWorldState> ws = blockchain.getWorldState(bn);
         if (ws.isPresent()) {
           return new AccountAdapter(ws.get().get(addr));
         } else {
@@ -168,10 +167,10 @@ public class GraphQLDataFetchers {
         }
       }
       // return account on latest block
-      long latestBn = blockchain.latestBlock().get().getHeader().getNumber();
-      Optional<MutableWorldState> ws = blockchain.getWorldState(latestBn);
+      final long latestBn = blockchain.latestBlock().get().getHeader().getNumber();
+      final Optional<MutableWorldState> ws = blockchain.getWorldState(latestBn);
       if (ws.isPresent()) {
-        Account acc = ws.get().get(addr);
+        final Account acc = ws.get().get(addr);
         if (acc != null) {
           return new AccountAdapter(acc);
         } else {
@@ -183,13 +182,13 @@ public class GraphQLDataFetchers {
     };
   }
 
-  public DataFetcher<Optional<TransactionAdapter>> getTransactionDataFetcher() {
+  DataFetcher<Optional<TransactionAdapter>> getTransactionDataFetcher() {
     return dataFetchingEnvironment -> {
-      BlockchainQuery blockchain =
+      final BlockchainQuery blockchain =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
-      Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
-      Optional<TransactionWithMetadata> tran = blockchain.transactionByHash(Hash.wrap(hash));
-      return tran.map(item -> new TransactionAdapter(item));
+      final Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
+      final Optional<TransactionWithMetadata> tran = blockchain.transactionByHash(Hash.wrap(hash));
+      return tran.map(TransactionAdapter::new);
     };
   }
 }

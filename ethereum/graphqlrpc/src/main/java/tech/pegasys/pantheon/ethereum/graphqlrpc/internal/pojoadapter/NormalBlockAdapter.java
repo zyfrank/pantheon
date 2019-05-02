@@ -39,55 +39,56 @@ public class NormalBlockAdapter extends BlockAdapterBase {
     return Optional.of(blockWithMetaData.getTransactions().size());
   }
 
+  @SuppressWarnings("unused")
   public Optional<UInt256> getTotalDifficulty() {
     return Optional.of(blockWithMetaData.getTotalDifficulty());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Integer> getOmmerCount() {
     return Optional.of(blockWithMetaData.getOmmers().size());
   }
 
+  @SuppressWarnings("unused")
   public List<UncleBlockAdapter> getOmmers(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = getBlockchainQuery(environment);
-    List<Hash> ommers = blockWithMetaData.getOmmers();
-    List<UncleBlockAdapter> results = new ArrayList<UncleBlockAdapter>();
-    Hash hash = blockWithMetaData.getHeader().getHash();
+    final BlockchainQuery query = getBlockchainQuery(environment);
+    final List<Hash> ommers = blockWithMetaData.getOmmers();
+    final List<UncleBlockAdapter> results = new ArrayList<>();
+    final Hash hash = blockWithMetaData.getHeader().getHash();
     for (int i = 0; i < ommers.size(); i++) {
-      Optional<BlockHeader> header = query.getOmmer(hash, i);
-      header.ifPresent(
-          item -> {
-            results.add(new UncleBlockAdapter(item));
-            ;
-          });
+      final Optional<BlockHeader> header = query.getOmmer(hash, i);
+      header.ifPresent(item -> results.add(new UncleBlockAdapter(item)));
     }
 
     return results;
   }
 
+  @SuppressWarnings("unused")
   public Optional<UncleBlockAdapter> getOmmerAt(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = getBlockchainQuery(environment);
-    int index = environment.getArgument("index");
-    List<Hash> ommers = blockWithMetaData.getOmmers();
+    final BlockchainQuery query = getBlockchainQuery(environment);
+    final int index = environment.getArgument("index");
+    final List<Hash> ommers = blockWithMetaData.getOmmers();
     if (ommers.size() > index) {
-      Hash hash = blockWithMetaData.getHeader().getHash();
-      Optional<BlockHeader> header = query.getOmmer(hash, index);
-      return header.map(item -> new UncleBlockAdapter(item));
+      final Hash hash = blockWithMetaData.getHeader().getHash();
+      final Optional<BlockHeader> header = query.getOmmer(hash, index);
+      return header.map(UncleBlockAdapter::new);
     }
     return Optional.empty();
   }
 
   public List<TransactionAdapter> getTransactions() {
-    List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
-    List<TransactionAdapter> results = new ArrayList<TransactionAdapter>();
-    for (TransactionWithMetadata tran : trans) {
+    final List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
+    final List<TransactionAdapter> results = new ArrayList<>();
+    for (final TransactionWithMetadata tran : trans) {
       results.add(new TransactionAdapter(tran));
     }
     return results;
   }
 
+  @SuppressWarnings("unused")
   public Optional<TransactionAdapter> getTransactionAt(final DataFetchingEnvironment environment) {
-    int index = environment.getArgument("index");
-    List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
+    final int index = environment.getArgument("index");
+    final List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();
 
     if (trans.size() > index) {
       return Optional.of(new TransactionAdapter(trans.get(index)));

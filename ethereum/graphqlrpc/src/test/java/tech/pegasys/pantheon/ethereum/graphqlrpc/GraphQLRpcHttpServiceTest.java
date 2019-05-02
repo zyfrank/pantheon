@@ -17,13 +17,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.pantheon.ethereum.core.InMemoryStorageProvider.createInMemoryWorldStateArchive;
 
 import tech.pegasys.pantheon.ethereum.blockcreation.EthHashMiningCoordinator;
-import tech.pegasys.pantheon.ethereum.chain.Blockchain;
-import tech.pegasys.pantheon.ethereum.chain.GenesisState;
-import tech.pegasys.pantheon.ethereum.core.Block;
-import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.core.Wei;
@@ -32,27 +27,16 @@ import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.TransactionWithMetadata;
-import tech.pegasys.pantheon.ethereum.mainnet.MainnetBlockHashFunction;
-import tech.pegasys.pantheon.ethereum.mainnet.MainnetProtocolSchedule;
-import tech.pegasys.pantheon.ethereum.mainnet.ProtocolSchedule;
-import tech.pegasys.pantheon.ethereum.p2p.api.P2PNetwork;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
-import tech.pegasys.pantheon.ethereum.util.RawBlockIterator;
-import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
-import tech.pegasys.pantheon.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import graphql.GraphQL;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -73,38 +57,25 @@ public class GraphQLRpcHttpServiceTest {
 
   private static final Vertx vertx = Vertx.vertx();
 
-  protected static GraphQLRpcHttpService service;
-  protected static OkHttpClient client;
-  protected static String baseUrl;
+  private static GraphQLRpcHttpService service;
+  private static OkHttpClient client;
+  private static String baseUrl;
   protected static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-  protected static final String CLIENT_VERSION = "TestClientVersion/0.1.0";
-  protected static final int CHAIN_ID = 123;
-  protected static P2PNetwork peerDiscoveryMock;
-  protected static BlockchainQuery blockchainQueries;
-  protected static Synchronizer synchronizer;
-  protected static GraphQL graphQL;
-  protected static GraphQLDataFetchers dataFetchers;
-  protected static GraphQLDataFetcherContext dataFetcherContext;
-  protected static EthHashMiningCoordinator miningCoordinatorMock;
-  // protected static MutableBlockchain blockchain;
-  protected static Blockchain blockchain;
-  protected static WorldStateArchive stateArchive;
-  protected static Block GENESIS_BLOCK;
-  protected static GenesisState GENESIS_CONFIG;
-  protected static List<Block> BLOCKS;
-  protected static ProtocolSchedule<Void> PROTOCOL_SCHEDULE;
+  private static BlockchainQuery blockchainQueries;
+  private static Synchronizer synchronizer;
+  private static GraphQL graphQL;
+  private static GraphQLDataFetchers dataFetchers;
+  private static GraphQLDataFetcherContext dataFetcherContext;
+  private static EthHashMiningCoordinator miningCoordinatorMock;
 
-  protected final GraphQLRpcTestHelper testHelper = new GraphQLRpcTestHelper();
+  private final GraphQLRpcTestHelper testHelper = new GraphQLRpcTestHelper();
 
   @BeforeClass
   public static void initServerAndClient() throws Exception {
-    peerDiscoveryMock = mock(P2PNetwork.class);
     blockchainQueries = mock(BlockchainQuery.class);
     synchronizer = mock(Synchronizer.class);
     graphQL = mock(GraphQL.class);
-    stateArchive = createInMemoryWorldStateArchive();
 
-    blockchain = mock(Blockchain.class);
     miningCoordinatorMock = mock(EthHashMiningCoordinator.class);
 
     dataFetcherContext = mock(GraphQLDataFetcherContext.class);
@@ -123,28 +94,18 @@ public class GraphQLRpcHttpServiceTest {
     service.start().join();
     // Build an OkHttp client.
     client = new OkHttpClient();
-    baseUrl = service.url();
+    baseUrl = service.url() + "/graphql/";
   }
 
   private static GraphQLRpcHttpService createGraphQLRpcHttpService(
       final GraphQLRpcConfiguration config) throws Exception {
     return new GraphQLRpcHttpService(
-        vertx,
-        folder.newFolder().toPath(),
-        config,
-        graphQL,
-        dataFetcherContext,
-        new NoOpMetricsSystem());
+        vertx, folder.newFolder().toPath(), config, graphQL, dataFetcherContext);
   }
 
   private static GraphQLRpcHttpService createGraphQLRpcHttpService() throws Exception {
     return new GraphQLRpcHttpService(
-        vertx,
-        folder.newFolder().toPath(),
-        createGraphQLRpcConfig(),
-        graphQL,
-        dataFetcherContext,
-        new NoOpMetricsSystem());
+        vertx, folder.newFolder().toPath(), createGraphQLRpcConfig(), graphQL, dataFetcherContext);
   }
 
   private static GraphQLRpcConfiguration createGraphQLRpcConfig() {
@@ -154,8 +115,7 @@ public class GraphQLRpcHttpServiceTest {
   }
 
   @BeforeClass
-  public static void setupConstants() throws Exception {
-    PROTOCOL_SCHEDULE = MainnetProtocolSchedule.create();
+  public static void setupConstants() {
 
     final URL blocksUrl =
         GraphQLRpcHttpServiceTest.class
@@ -170,21 +130,6 @@ public class GraphQLRpcHttpServiceTest {
 
     assertThat(blocksUrl).isNotNull();
     assertThat(genesisJsonUrl).isNotNull();
-
-    BLOCKS = new ArrayList<>();
-    try (final RawBlockIterator iterator =
-        new RawBlockIterator(
-            Paths.get(blocksUrl.toURI()),
-            rlp -> BlockHeader.readFrom(rlp, MainnetBlockHashFunction::createHash))) {
-      while (iterator.hasNext()) {
-        BLOCKS.add(iterator.next());
-      }
-    }
-
-    final String genesisJson = Resources.toString(genesisJsonUrl, Charsets.UTF_8);
-
-    GENESIS_BLOCK = BLOCKS.get(0);
-    GENESIS_CONFIG = GenesisState.fromJson(genesisJson, PROTOCOL_SCHEDULE);
   }
 
   /** Tears down the HTTP server. */
@@ -198,9 +143,7 @@ public class GraphQLRpcHttpServiceTest {
     service
         .start()
         .whenComplete(
-            (unused, exception) -> {
-              assertThat(exception).isInstanceOf(IllegalStateException.class);
-            });
+            (unused, exception) -> assertThat(exception).isInstanceOf(IllegalStateException.class));
   }
 
   @Test
@@ -212,14 +155,15 @@ public class GraphQLRpcHttpServiceTest {
 
   @Test
   public void handleEmptyRequest() throws Exception {
-    try (final Response resp = client.newCall(buildGetRequest("")).execute()) {
+    try (final Response resp =
+        client.newCall(new Request.Builder().get().url(service.url()).build()).execute()) {
       assertThat(resp.code()).isEqualTo(201);
     }
   }
 
   @Test
   public void handleInvalidQuerySchema() throws Exception {
-    RequestBody body = RequestBody.create(JSON, "{gasPrice1}");
+    final RequestBody body = RequestBody.create(JSON, "{gasPrice1}");
 
     try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
       // assertThat(resp.code()).isEqualTo(200); // Check general format of result
@@ -230,15 +174,15 @@ public class GraphQLRpcHttpServiceTest {
 
   @Test
   public void getGasprice() throws Exception {
-    RequestBody body = RequestBody.create(JSON, "{gasPrice}");
-    Wei price = Wei.of(16);
+    final RequestBody body = RequestBody.create(JSON, "{gasPrice}");
+    final Wei price = Wei.of(16);
     when(miningCoordinatorMock.getMinTransactionGasPrice()).thenReturn(price);
 
     try (final Response resp = client.newCall(buildPostRequest(body)).execute()) {
       assertThat(resp.code()).isEqualTo(200); // Check general format of result
       final JsonObject json = new JsonObject(resp.body().string());
       testHelper.assertValidGraphQLRpcResult(json);
-      String result = json.getJsonObject("data").getString("gasPrice");
+      final String result = json.getJsonObject("data").getString("gasPrice");
       assertThat(result).isEqualTo("0x10");
     }
   }
@@ -308,7 +252,7 @@ public class GraphQLRpcHttpServiceTest {
       final String jsonStr = resp.body().string();
       final JsonObject json = new JsonObject(jsonStr);
       testHelper.assertValidGraphQLRpcResult(json);
-      int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
+      final int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
       assertThat(result).isEqualTo(uncleCount);
     }
   }
@@ -332,7 +276,7 @@ public class GraphQLRpcHttpServiceTest {
       final String jsonStr = resp.body().string();
       final JsonObject json = new JsonObject(jsonStr);
       testHelper.assertValidGraphQLRpcResult(json);
-      int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
+      final int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
       assertThat(result).isEqualTo(uncleCount);
     }
   }
@@ -356,7 +300,7 @@ public class GraphQLRpcHttpServiceTest {
       final String jsonStr = resp.body().string();
       final JsonObject json = new JsonObject(jsonStr);
       testHelper.assertValidGraphQLRpcResult(json);
-      int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
+      final int result = json.getJsonObject("data").getJsonObject("block").getInteger("ommerCount");
       assertThat(result).isEqualTo(uncleCount);
     }
   }

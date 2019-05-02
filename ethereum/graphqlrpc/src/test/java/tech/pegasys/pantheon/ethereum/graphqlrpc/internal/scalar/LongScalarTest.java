@@ -31,38 +31,46 @@ public class LongScalarTest {
   private LongScalar scalar;
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private String str = "0xf4240";
-  private Long value = Long.decode(str);
-  private StringValue strValue = StringValue.newStringValue(str).build();
-  private StringValue invalidStrValue = StringValue.newStringValue("gh").build();
+  private final String str = "0xf4240";
+  private final Long value = Long.decode(str);
+  private final StringValue strValue = StringValue.newStringValue(str).build();
+  private final StringValue invalidStrValue = StringValue.newStringValue("gh").build();
 
   @Test
-  public void pareValueTest() {
-    String result = (String) scalar.getCoercing().parseValue(value);
-    assertThat(result).isEqualTo(str);
+  public void parseLongValueTest() {
+    assertThat(scalar.getCoercing().parseValue(value)).isEqualTo(value);
+  }
+
+  @Test
+  public void parseStringValueTest() {
+    assertThat(scalar.getCoercing().parseValue(str)).isEqualTo(value);
   }
 
   @Test
   public void pareValueErrorTest() {
     thrown.expect(CoercingParseValueException.class);
-    scalar.getCoercing().parseValue(str);
+    scalar.getCoercing().parseValue(invalidStrValue);
   }
 
   @Test
-  public void serializeTest() {
-    String result = (String) scalar.getCoercing().serialize(value);
-    assertThat(result).isEqualTo(str);
+  public void serializeLongTest() {
+    assertThat(scalar.getCoercing().serialize(value)).isEqualTo(value);
+  }
+
+  @Test
+  public void serializeStringTest() {
+    assertThat(scalar.getCoercing().serialize(str)).isEqualTo(value);
   }
 
   @Test
   public void serializeErrorTest() {
     thrown.expect(CoercingSerializeException.class);
-    scalar.getCoercing().serialize(str);
+    scalar.getCoercing().serialize(invalidStrValue);
   }
 
   @Test
   public void pareLiteralTest() {
-    Long result = (Long) scalar.getCoercing().parseLiteral(strValue);
+    final Long result = (Long) scalar.getCoercing().parseLiteral(strValue);
     assertThat(result).isEqualTo(value);
   }
 

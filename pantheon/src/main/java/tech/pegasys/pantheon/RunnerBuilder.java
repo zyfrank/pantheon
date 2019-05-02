@@ -260,7 +260,7 @@ public class RunnerBuilder {
         new TransactionSimulator(
             context.getBlockchain(), context.getWorldStateArchive(), protocolSchedule);
 
-    BytesValue localNodeId = keyPair.getPublicKey().getEncodedBytes();
+    final BytesValue localNodeId = keyPair.getPublicKey().getEncodedBytes();
     final Optional<NodePermissioningController> nodePermissioningController =
         buildNodePermissioningController(
             bootnodesAsEnodeURLs, synchronizer, transactionSimulator, localNodeId);
@@ -274,8 +274,8 @@ public class RunnerBuilder {
                         .findFirst())
             .map(n -> (NodeLocalConfigPermissioningController) n);
 
-    NetworkBuilder inactiveNetwork = (caps) -> new NoopP2PNetwork();
-    NetworkBuilder activeNetwork =
+    final NetworkBuilder inactiveNetwork = (caps) -> new NoopP2PNetwork();
+    final NetworkBuilder activeNetwork =
         (caps) ->
             DefaultP2PNetwork.builder()
                 .vertx(vertx)
@@ -352,33 +352,27 @@ public class RunnerBuilder {
                   vertx, dataDir, jsonRpcConfiguration, metricsSystem, jsonRpcMethods));
     }
 
-    GraphQLDataFetchers fetchers = new GraphQLDataFetchers(supportedCapabilities);
-    GraphQLDataFetcherContext dataFetcherContext =
-        new GraphQLDataFetcherContext(
-            context.getBlockchain(),
-            context.getWorldStateArchive(),
-            protocolSchedule,
-            transactionPool,
-            miningCoordinator,
-            synchronizer);
-    GraphQL graphQL = null;
-    try {
-      graphQL = GraphQLProvider.buildGraphQL(fetchers);
-    } catch (IOException e) {
-
-    }
-
     Optional<GraphQLRpcHttpService> graphQLRpcHttpService = Optional.empty();
     if (graphQLRpcConfiguration.isEnabled()) {
+      final GraphQLDataFetchers fetchers = new GraphQLDataFetchers(supportedCapabilities);
+      final GraphQLDataFetcherContext dataFetcherContext =
+          new GraphQLDataFetcherContext(
+              context.getBlockchain(),
+              context.getWorldStateArchive(),
+              protocolSchedule,
+              transactionPool,
+              miningCoordinator,
+              synchronizer);
+      GraphQL graphQL = null;
+      try {
+        graphQL = GraphQLProvider.buildGraphQL(fetchers);
+      } catch (final IOException ignored) {
+      }
+
       graphQLRpcHttpService =
           Optional.of(
               new GraphQLRpcHttpService(
-                  vertx,
-                  dataDir,
-                  GraphQLRpcConfiguration.createDefault(),
-                  graphQL,
-                  dataFetcherContext,
-                  metricsSystem));
+                  vertx, dataDir, graphQLRpcConfiguration, graphQL, dataFetcherContext));
     }
 
     Optional<WebSocketService> webSocketService = Optional.empty();
@@ -441,7 +435,7 @@ public class RunnerBuilder {
       final Synchronizer synchronizer,
       final TransactionSimulator transactionSimulator,
       final BytesValue localNodeId) {
-    Collection<EnodeURL> fixedNodes = getFixedNodes(bootnodesAsEnodeURLs, staticNodes);
+    final Collection<EnodeURL> fixedNodes = getFixedNodes(bootnodesAsEnodeURLs, staticNodes);
     return permissioningConfiguration.map(
         config ->
             new NodePermissioningControllerFactory()
@@ -451,7 +445,7 @@ public class RunnerBuilder {
   @VisibleForTesting
   public static Collection<EnodeURL> getFixedNodes(
       final Collection<EnodeURL> someFixedNodes, final Collection<EnodeURL> moreFixedNodes) {
-    Collection<EnodeURL> fixedNodes = new ArrayList<>(someFixedNodes);
+    final Collection<EnodeURL> fixedNodes = new ArrayList<>(someFixedNodes);
     fixedNodes.addAll(moreFixedNodes);
     return fixedNodes;
   }

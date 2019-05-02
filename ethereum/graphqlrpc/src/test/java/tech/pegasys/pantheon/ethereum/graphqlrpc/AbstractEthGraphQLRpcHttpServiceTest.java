@@ -42,13 +42,10 @@ import tech.pegasys.pantheon.ethereum.mainnet.ValidationResult;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
 import tech.pegasys.pantheon.ethereum.util.RawBlockIterator;
 import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
-import tech.pegasys.pantheon.metrics.noop.NoOpMetricsSystem;
 
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -69,36 +66,29 @@ import org.junit.rules.TemporaryFolder;
 public abstract class AbstractEthGraphQLRpcHttpServiceTest {
   @Rule public final TemporaryFolder folder = new TemporaryFolder();
 
-  protected static ProtocolSchedule<Void> PROTOCOL_SCHEDULE;
+  private static ProtocolSchedule<Void> PROTOCOL_SCHEDULE;
 
-  protected static List<Block> BLOCKS;
+  static List<Block> BLOCKS;
 
-  protected static Block GENESIS_BLOCK;
+  private static Block GENESIS_BLOCK;
 
-  protected static GenesisState GENESIS_CONFIG;
+  private static GenesisState GENESIS_CONFIG;
 
-  protected final Vertx vertx = Vertx.vertx();
+  private final Vertx vertx = Vertx.vertx();
 
-  protected GraphQLRpcHttpService service;
+  private GraphQLRpcHttpService service;
 
-  protected OkHttpClient client;
+  OkHttpClient client;
 
-  protected String baseUrl;
+  String baseUrl;
 
-  protected final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+  final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-  protected final String CLIENT_VERSION = "TestClientVersion/0.1.0";
+  private MutableBlockchain blockchain;
 
-  protected final int NETWORK_ID = 123;
+  private WorldStateArchive stateArchive;
 
-  protected static final Collection<RpcApi> JSON_RPC_APIS =
-      Arrays.asList(RpcApis.ETH, RpcApis.NET, RpcApis.WEB3);
-
-  protected MutableBlockchain blockchain;
-
-  protected WorldStateArchive stateArchive;
-
-  protected ProtocolContext<Void> context;
+  private ProtocolContext<Void> context;
 
   @BeforeClass
   public static void setupConstants() throws Exception {
@@ -177,16 +167,11 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
 
     service =
         new GraphQLRpcHttpService(
-            vertx,
-            folder.newFolder().toPath(),
-            config,
-            graphQL,
-            dataFetcherContext,
-            new NoOpMetricsSystem());
+            vertx, folder.newFolder().toPath(), config, graphQL, dataFetcherContext);
     service.start().join();
 
     client = new OkHttpClient();
-    baseUrl = service.url();
+    baseUrl = service.url() + "/graphql/";
   }
 
   @After
@@ -197,7 +182,7 @@ public abstract class AbstractEthGraphQLRpcHttpServiceTest {
     vertx.close();
   }
 
-  protected void importBlock(final int n) {
+  void importBlock(final int n) {
     final Block block = BLOCKS.get(n);
     final ProtocolSpec<Void> protocolSpec =
         PROTOCOL_SCHEDULE.getByBlockNumber(block.getHeader().getNumber());

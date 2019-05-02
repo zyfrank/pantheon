@@ -41,7 +41,7 @@ public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcH
 
   @Parameters(name = "{index}: {0}")
   public static Collection<String> specs() {
-    final List<String> specs = new ArrayList<String>();
+    final List<String> specs = new ArrayList<>();
     specs.add("eth_getBlockWrongParams");
     specs.add("eth_getBlocksByWrongRange");
     specs.add("eth_getBalance_toobig_bn");
@@ -78,7 +78,7 @@ public class EthGraphQLRpcHttpBySpecErrorCaseTest extends AbstractEthGraphQLRpcH
         if (expectedRespBody != null) {
           assertThat(result).isEqualTo(expectedRespBody);
         }
-      } catch (IllegalStateException e) {
+      } catch (final IllegalStateException ignored) {
       }
     }
   }

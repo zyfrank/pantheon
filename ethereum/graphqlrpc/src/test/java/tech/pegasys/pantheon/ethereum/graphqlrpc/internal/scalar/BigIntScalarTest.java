@@ -33,14 +33,14 @@ public class BigIntScalarTest {
   private BigIntScalar scalar;
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private String str = "0x10";
-  private UInt256 value = UInt256.fromHexString(str);
-  private StringValue strValue = StringValue.newStringValue(str).build();
-  private StringValue invalidStrValue = StringValue.newStringValue("0xgh").build();
+  private final String str = "0x10";
+  private final UInt256 value = UInt256.fromHexString(str);
+  private final StringValue strValue = StringValue.newStringValue(str).build();
+  private final StringValue invalidStrValue = StringValue.newStringValue("0xgh").build();
 
   @Test
   public void pareValueTest() {
-    String result = (String) scalar.getCoercing().parseValue(value);
+    final String result = (String) scalar.getCoercing().parseValue(value);
     assertThat(result).isEqualTo(str);
   }
 
@@ -52,7 +52,7 @@ public class BigIntScalarTest {
 
   @Test
   public void serializeTest() {
-    String result = (String) scalar.getCoercing().serialize(value);
+    final String result = (String) scalar.getCoercing().serialize(value);
     assertThat(result).isEqualTo(str);
   }
 
@@ -64,7 +64,7 @@ public class BigIntScalarTest {
 
   @Test
   public void pareLiteralTest() {
-    UInt256 result = (UInt256) scalar.getCoercing().parseLiteral(strValue);
+    final UInt256 result = (UInt256) scalar.getCoercing().parseLiteral(strValue);
     assertThat(result).isEqualTo(value);
   }
 

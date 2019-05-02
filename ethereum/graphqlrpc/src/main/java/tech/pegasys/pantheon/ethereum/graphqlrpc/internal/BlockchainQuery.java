@@ -12,8 +12,6 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import tech.pegasys.pantheon.ethereum.chain.Blockchain;
 import tech.pegasys.pantheon.ethereum.chain.TransactionLocation;
 import tech.pegasys.pantheon.ethereum.core.Account;
@@ -25,16 +23,11 @@ import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.Transaction;
 import tech.pegasys.pantheon.ethereum.core.TransactionReceipt;
-import tech.pegasys.pantheon.ethereum.core.Wei;
-import tech.pegasys.pantheon.ethereum.core.WorldState;
 import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
-import tech.pegasys.pantheon.util.bytes.BytesValue;
-import tech.pegasys.pantheon.util.uint.UInt256;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
@@ -58,58 +51,12 @@ public class BlockchainQuery {
   }
 
   /**
-   * Retrieves the header hash of the block at the given height in the canonical chain.
-   *
-   * @param number The height of the block whose hash should be retrieved.
-   * @return The hash of the block at the given height.
-   */
-  public Optional<Hash> getBlockHashByNumber(final long number) {
-    return blockchain.getBlockHashByNumber(number);
-  }
-
-  /**
    * Return the block number of the head of the chain.
    *
    * @return The block number of the head of the chain.
    */
-  public long headBlockNumber() {
+  private long headBlockNumber() {
     return blockchain.getChainHeadBlockNumber();
-  }
-
-  /**
-   * Determines the block header for the address associated with this storage index.
-   *
-   * @param address The address of the account that owns the storage being queried.
-   * @param storageIndex The storage index whose value is being retrieved.
-   * @param blockNumber The blockNumber that is being queried.
-   * @return The value at the storage index being queried.
-   */
-  public Optional<UInt256> storageAt(
-      final Address address, final UInt256 storageIndex, final long blockNumber) {
-    return fromAccount(
-        address, blockNumber, account -> account.getStorageValue(storageIndex), UInt256.ZERO);
-  }
-
-  /**
-   * Returns the balance of the given account at a specific block number.
-   *
-   * @param address The address of the account being queried.
-   * @param blockNumber The block number being queried.
-   * @return The balance of the account in Wei.
-   */
-  public Optional<Wei> accountBalance(final Address address, final long blockNumber) {
-    return fromAccount(address, blockNumber, Account::getBalance, Wei.ZERO);
-  }
-
-  /**
-   * Retrieves the code associated with the given account at a particular block number.
-   *
-   * @param address The account address being queried.
-   * @param blockNumber The height of the block to be checked.
-   * @return The code associated with this address.
-   */
-  public Optional<BytesValue> getCode(final Address address, final long blockNumber) {
-    return fromAccount(address, blockNumber, Account::getCode, BytesValue.EMPTY);
   }
 
   /**
@@ -170,35 +117,6 @@ public class BlockchainQuery {
   }
 
   /**
-   * Returns the number of ommers in the block at the given height.
-   *
-   * @param blockNumber The height of the block being queried.
-   * @return The number of ommers in the referenced block.
-   */
-  public Optional<Integer> getOmmerCount(final long blockNumber) {
-    return blockchain.getBlockHashByNumber(blockNumber).flatMap(this::getOmmerCount);
-  }
-
-  /**
-   * Returns the number of ommers in the block at the given height.
-   *
-   * @param blockHeaderHash The hash of the block being queried.
-   * @return The number of ommers in the referenced block.
-   */
-  public Optional<Integer> getOmmerCount(final Hash blockHeaderHash) {
-    return blockchain.getBlockBody(blockHeaderHash).map(b -> b.getOmmers().size());
-  }
-
-  /**
-   * Returns the number of ommers in the latest block.
-   *
-   * @return The number of ommers in the latest block.
-   */
-  public Optional<Integer> getOmmerCount() {
-    return getOmmerCount(blockchain.getChainHeadHash());
-  }
-
-  /**
    * Returns the ommer at the given index for the referenced block.
    *
    * @param blockHeaderHash The hash of the block to be queried.
@@ -216,29 +134,6 @@ public class BlockchainQuery {
     } else {
       return null;
     }
-  }
-
-  /**
-   * Returns the ommer at the given index for the referenced block.
-   *
-   * @param blockNumber The block number identifying the block to be queried.
-   * @param index The index of the ommer in the blocks ommers list.
-   * @return The ommer at the given index belonging to the referenced block.
-   */
-  public Optional<BlockHeader> getOmmer(final long blockNumber, final int index) {
-    return blockchain.getBlockHashByNumber(blockNumber).flatMap(hash -> getOmmer(hash, index));
-  }
-
-  /**
-   * Returns the ommer at the given index for the latest block.
-   *
-   * @param index The index of the ommer in the blocks ommers list.
-   * @return The ommer at the given index belonging to the latest block.
-   */
-  public Optional<BlockHeader> getOmmer(final int index) {
-    return blockchain
-        .getBlockHashByNumber(blockchain.getChainHeadBlockNumber())
-        .flatMap(hash -> getOmmer(hash, index));
   }
 
   /**
@@ -302,7 +197,7 @@ public class BlockchainQuery {
    * @param blockHeaderHash The hash of the target block's header.
    * @return The referenced block.
    */
-  public Optional<BlockWithMetadata<Hash, Hash>> blockByHashWithTxHashes(
+  private Optional<BlockWithMetadata<Hash, Hash>> blockByHashWithTxHashes(
       final Hash blockHeaderHash) {
     return blockchain
         .getBlockHeader(blockHeaderHash)
@@ -330,31 +225,6 @@ public class BlockchainQuery {
   }
 
   /**
-   * Given a block number, returns the associated block with metadata and a list of transaction
-   * hashes rather than full transactions.
-   *
-   * @param blockNumber The height of the target block's header.
-   * @return The referenced block.
-   */
-  public Optional<BlockWithMetadata<Hash, Hash>> blockByNumberWithTxHashes(final long blockNumber) {
-    return blockchain.getBlockHashByNumber(blockNumber).flatMap(this::blockByHashWithTxHashes);
-  }
-
-  public Optional<BlockHeader> getBlockHeaderByNumber(final long number) {
-    return blockchain.getBlockHeader(number);
-  }
-
-  /**
-   * Returns the latest block with metadata and a list of transaction hashes rather than full
-   * transactions.
-   *
-   * @return The latest block.
-   */
-  public Optional<BlockWithMetadata<Hash, Hash>> latestBlockWithTxHashes() {
-    return this.blockByHashWithTxHashes(blockchain.getChainHeadHash());
-  }
-
-  /**
    * Given a transaction hash, returns the associated transaction.
    *
    * @param transactionHash The hash of the target transaction.
@@ -373,58 +243,6 @@ public class BlockchainQuery {
     return Optional.of(
         new TransactionWithMetadata(
             transaction, header.getNumber(), blockHash, loc.getTransactionIndex()));
-  }
-
-  /**
-   * Returns the transaction at the given index for the specified block.
-   *
-   * @param blockNumber The number of the block being queried.
-   * @param txIndex The index of the transaction to return.
-   * @return The transaction at the specified location.
-   */
-  public Optional<TransactionWithMetadata> transactionByBlockNumberAndIndex(
-      final long blockNumber, final int txIndex) {
-    checkArgument(txIndex >= 0);
-    return blockchain
-        .getBlockHeader(blockNumber)
-        .map(header -> Optional.ofNullable(transactionByHeaderAndIndex(header, txIndex)))
-        .orElse(Optional.empty());
-  }
-
-  /**
-   * Returns the transaction at the given index for the specified block.
-   *
-   * @param blockHeaderHash The hash of the block being queried.
-   * @param txIndex The index of the transaction to return.
-   * @return The transaction at the specified location.
-   */
-  public Optional<TransactionWithMetadata> transactionByBlockHashAndIndex(
-      final Hash blockHeaderHash, final int txIndex) {
-    checkArgument(txIndex >= 0);
-    return blockchain
-        .getBlockHeader(blockHeaderHash)
-        .map(header -> Optional.ofNullable(transactionByHeaderAndIndex(header, txIndex)))
-        .orElse(Optional.empty());
-  }
-
-  /**
-   * Helper method to return the transaction at the given index for the specified header, used by
-   * getTransactionByBlock*AndIndex methods.
-   *
-   * @param header The block header.
-   * @param txIndex The index of the transaction to return.
-   * @return The transaction at the specified location.
-   */
-  private TransactionWithMetadata transactionByHeaderAndIndex(
-      final BlockHeader header, final int txIndex) {
-    final Hash blockHeaderHash = header.getHash();
-    final BlockBody blockBody = blockchain.getBlockBody(blockHeaderHash).get();
-    final List<Transaction> txs = blockBody.getTransactions();
-    if (txIndex >= txs.size()) {
-      return null;
-    }
-    return new TransactionWithMetadata(
-        txs.get(txIndex), header.getNumber(), blockHeaderHash, txIndex);
   }
 
   /**
@@ -479,25 +297,6 @@ public class BlockchainQuery {
     return header.map(BlockHeader::getStateRoot).flatMap(worldStateArchive::getMutable);
   }
 
-  private <T> Optional<T> fromWorldState(
-      final long blockNumber, final Function<WorldState, T> getter) {
-    if (!withinValidRange(blockNumber)) {
-      return Optional.empty();
-    }
-    return getWorldState(blockNumber).map(getter);
-  }
-
-  private <T> Optional<T> fromAccount(
-      final Address address,
-      final long blockNumber,
-      final Function<Account, T> getter,
-      final T noAccountValue) {
-    return fromWorldState(
-        blockNumber,
-        worldState ->
-            Optional.ofNullable(worldState.get(address)).map(getter).orElse(noAccountValue));
-  }
-
   private List<TransactionWithMetadata> formatTransactions(
       final List<Transaction> txs, final long blockNumber, final Hash blockHash) {
     final int count = txs.size();
@@ -512,45 +311,9 @@ public class BlockchainQuery {
     return blockNumber <= headBlockNumber() && blockNumber >= BlockHeader.GENESIS_BLOCK_NUMBER;
   }
 
-  /**
-   * Retrieve logs from the range of blocks with optional filtering based on logger address and log
-   * topics.
-   *
-   * @param fromBlockNumber The block number defining the first block in the search range
-   *     (inclusive).
-   * @param toBlockNumber The block number defining the last block in the search range (inclusive).
-   * @param query Constraints on required topics by topic index. For a given index if the set of
-   *     topics is non-empty, the topic at this index must match one of the values in the set.
-   * @return The set of logs matching the given constraints.
-   */
-  public List<LogWithMetadata> matchingLogs(
-      final long fromBlockNumber, final long toBlockNumber, final LogsQuery query) {
-    if (fromBlockNumber > toBlockNumber || toBlockNumber > headBlockNumber()) {
-      return Lists.newArrayList();
-    }
-    List<LogWithMetadata> matchingLogs = Lists.newArrayList();
-    for (long blockNumber = fromBlockNumber; blockNumber <= toBlockNumber; blockNumber++) {
-      final Hash blockhash = blockchain.getBlockHashByNumber(blockNumber).get();
-      final boolean logHasBeenRemoved = !blockchain.blockIsOnCanonicalChain(blockhash);
-      final List<TransactionReceipt> receipts = blockchain.getTxReceipts(blockhash).get();
-      final List<Transaction> transaction =
-          blockchain.getBlockBody(blockhash).get().getTransactions();
-      matchingLogs =
-          generateLogWithMetadata(
-              receipts,
-              blockNumber,
-              query,
-              blockhash,
-              matchingLogs,
-              transaction,
-              logHasBeenRemoved);
-    }
-    return matchingLogs;
-  }
-
   public List<LogWithMetadata> matchingLogs(final Hash blockhash, final LogsQuery query) {
     final List<LogWithMetadata> matchingLogs = Lists.newArrayList();
-    Optional<BlockHeader> blockHeader = blockchain.getBlockHeader(blockhash);
+    final Optional<BlockHeader> blockHeader = blockchain.getBlockHeader(blockhash);
     if (!blockHeader.isPresent()) {
       return matchingLogs;
     }
@@ -601,7 +364,7 @@ public class BlockchainQuery {
       final int transactionIndex,
       final boolean removed) {
 
-    List<LogWithMetadata> logs = new ArrayList<LogWithMetadata>();
+    final List<LogWithMetadata> logs = new ArrayList<>();
     for (int logIndex = 0; logIndex < receipt.getLogs().size(); ++logIndex) {
 
       final LogWithMetadata logWithMetaData =

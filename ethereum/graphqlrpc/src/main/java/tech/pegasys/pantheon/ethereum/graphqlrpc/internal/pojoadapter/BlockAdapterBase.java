@@ -45,16 +45,17 @@ public class BlockAdapterBase extends AdapterBase {
 
   private final BlockHeader header;
 
-  public BlockAdapterBase(final BlockHeader header) {
+  BlockAdapterBase(final BlockHeader header) {
     this.header = header;
   }
 
+  @SuppressWarnings("unused")
   public Optional<NormalBlockAdapter> getParent(final DataFetchingEnvironment environment) {
-    BlockchainQuery query = getBlockchainQuery(environment);
-    Hash parentHash = header.getParentHash();
-    Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block =
+    final BlockchainQuery query = getBlockchainQuery(environment);
+    final Hash parentHash = header.getParentHash();
+    final Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block =
         query.blockByHash(parentHash);
-    return block.map(item -> new NormalBlockAdapter(item));
+    return block.map(NormalBlockAdapter::new);
   }
 
   public Optional<Bytes32> getHash() {
@@ -62,30 +63,34 @@ public class BlockAdapterBase extends AdapterBase {
   }
 
   public Optional<BytesValue> getNonce() {
-    long nonce = header.getNonce();
-    byte[] bytes = Longs.toByteArray(nonce);
+    final long nonce = header.getNonce();
+    final byte[] bytes = Longs.toByteArray(nonce);
     return Optional.of(BytesValue.wrap(bytes));
   }
 
+  @SuppressWarnings("unused")
   public Optional<Bytes32> getTransactionsRoot() {
     return Optional.of(header.getTransactionsRoot());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Bytes32> getStateRoot() {
     return Optional.of(header.getStateRoot());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Bytes32> getReceiptsRoot() {
     return Optional.of(header.getReceiptsRoot());
   }
 
+  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getMiner(final DataFetchingEnvironment environment) {
 
-    BlockchainQuery query = getBlockchainQuery(environment);
+    final BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = header.getNumber();
-    Long bn = environment.getArgument("block");
+    final Long bn = environment.getArgument("block");
     if (bn != null) {
-      blockNumber = bn.longValue();
+      blockNumber = bn;
     }
     return Optional.of(
         new AccountAdapter(query.getWorldState(blockNumber).get().get(header.getCoinbase())));
@@ -96,17 +101,18 @@ public class BlockAdapterBase extends AdapterBase {
   }
 
   public Optional<Long> getGasLimit() {
-    return Optional.of(Long.valueOf(header.getGasLimit()));
+    return Optional.of(header.getGasLimit());
   }
 
   public Optional<Long> getGasUsed() {
-    return Optional.of(Long.valueOf(header.getGasUsed()));
+    return Optional.of(header.getGasUsed());
   }
 
   public Optional<UInt256> getTimestamp() {
     return Optional.of(UInt256.of(header.getTimestamp()));
   }
 
+  @SuppressWarnings("unused")
   public Optional<BytesValue> getLogsBloom() {
     return Optional.of(header.getLogsBloom().getBytes());
   }
@@ -119,39 +125,42 @@ public class BlockAdapterBase extends AdapterBase {
     return Optional.of(header.getDifficulty());
   }
 
+  @SuppressWarnings("unused")
   public Optional<Bytes32> getOmmerHash() {
     return Optional.of(header.getOmmersHash());
   }
 
   public Optional<Long> getNumber() {
-    long bn = header.getNumber();
-    return Optional.of(Long.valueOf(bn));
+    final long bn = header.getNumber();
+    return Optional.of(bn);
   }
 
+  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
 
-    BlockchainQuery query = getBlockchainQuery(environment);
-    long bn = header.getNumber();
-    MutableWorldState ws = query.getWorldState(bn).get();
+    final BlockchainQuery query = getBlockchainQuery(environment);
+    final long bn = header.getNumber();
+    final MutableWorldState ws = query.getWorldState(bn).get();
 
     if (ws != null) {
-      Address addr = environment.getArgument("address");
+      final Address addr = environment.getArgument("address");
       return Optional.of(new AccountAdapter(ws.get(addr)));
     }
     return Optional.empty();
   }
 
+  @SuppressWarnings("unused")
   public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
 
-    Map<String, Object> filter = environment.getArgument("filter");
+    final Map<String, Object> filter = environment.getArgument("filter");
 
     @SuppressWarnings("unchecked")
-    List<Address> addrs = (List<Address>) filter.get("addresses");
+    final List<Address> addrs = (List<Address>) filter.get("addresses");
     @SuppressWarnings("unchecked")
-    List<List<Bytes32>> topics = (List<List<Bytes32>>) filter.get("topics");
+    final List<List<Bytes32>> topics = (List<List<Bytes32>>) filter.get("topics");
 
-    List<List<LogTopic>> transformedTopics = new ArrayList<>();
-    for (List<Bytes32> topic : topics) {
+    final List<List<LogTopic>> transformedTopics = new ArrayList<>();
+    for (final List<Bytes32> topic : topics) {
       transformedTopics.add(topic.stream().map(LogTopic::of).collect(Collectors.toList()));
     }
 
@@ -160,40 +169,39 @@ public class BlockAdapterBase extends AdapterBase {
 
     final BlockchainQuery blockchain = getBlockchainQuery(environment);
 
-    Hash hash = header.getHash();
-    List<LogWithMetadata> logs = blockchain.matchingLogs(hash, query);
-    List<LogAdapter> results = new ArrayList<>();
-    for (LogWithMetadata log : logs) {
+    final Hash hash = header.getHash();
+    final List<LogWithMetadata> logs = blockchain.matchingLogs(hash, query);
+    final List<LogAdapter> results = new ArrayList<>();
+    for (final LogWithMetadata log : logs) {
       results.add(new LogAdapter(log));
     }
     return results;
   }
 
+  @SuppressWarnings("unused")
   public Optional<Long> getEstimateGas(final DataFetchingEnvironment environment) {
-    Optional<CallResult> result = executeCall(environment);
-    if (result.isPresent()) {
-      return Optional.of(result.get().getGasUsed());
-    }
-    return Optional.empty();
+    final Optional<CallResult> result = executeCall(environment);
+    return result.map(CallResult::getGasUsed);
   }
 
+  @SuppressWarnings("unused")
   public Optional<CallResult> getCall(final DataFetchingEnvironment environment) {
     return executeCall(environment);
   }
 
   private Optional<CallResult> executeCall(final DataFetchingEnvironment environment) {
-    Map<String, Object> callData = environment.getArgument("data");
-    Address from = (Address) callData.get("from");
-    Address to = (Address) callData.get("to");
-    Long gas = (Long) callData.get("gas");
-    UInt256 gasPrice = (UInt256) callData.get("gasPrice");
-    UInt256 value = (UInt256) callData.get("value");
-    BytesValue data = (BytesValue) callData.get("data");
+    final Map<String, Object> callData = environment.getArgument("data");
+    final Address from = (Address) callData.get("from");
+    final Address to = (Address) callData.get("to");
+    final Long gas = (Long) callData.get("gas");
+    final UInt256 gasPrice = (UInt256) callData.get("gasPrice");
+    final UInt256 value = (UInt256) callData.get("value");
+    final BytesValue data = (BytesValue) callData.get("data");
 
     final BlockchainQuery query = getBlockchainQuery(environment);
-    ProtocolSchedule<?> protocolSchedule =
+    final ProtocolSchedule<?> protocolSchedule =
         ((GraphQLDataFetcherContext) environment.getContext()).getProtocolSchedule();
-    long bn = header.getNumber();
+    final long bn = header.getNumber();
 
     final TransactionSimulator transactionSimulator =
         new TransactionSimulator(
@@ -203,7 +211,7 @@ public class BlockAdapterBase extends AdapterBase {
     Wei gasPriceParam = null;
     Wei valueParam = null;
     if (gas != null) {
-      gasParam = gas.longValue();
+      gasParam = gas;
     }
     if (gasPrice != null) {
       gasPriceParam = Wei.of(gasPrice);
@@ -216,14 +224,13 @@ public class BlockAdapterBase extends AdapterBase {
 
     final Optional<TransactionSimulatorResult> opt = transactionSimulator.process(param, bn);
     if (opt.isPresent()) {
-      TransactionSimulatorResult result = opt.get();
+      final TransactionSimulatorResult result = opt.get();
       long status = 0;
       if (result.isSuccessful()) {
         status = 1;
       }
-      CallResult callResult =
-          new CallResult(
-              Long.valueOf(status), Long.valueOf(result.getGasEstimate()), result.getOutput());
+      final CallResult callResult =
+          new CallResult(status, result.getGasEstimate(), result.getOutput());
       return Optional.of(callResult);
     }
     return Optional.empty();
