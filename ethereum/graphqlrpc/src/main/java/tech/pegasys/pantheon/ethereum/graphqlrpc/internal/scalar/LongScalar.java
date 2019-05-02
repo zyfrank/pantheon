@@ -12,8 +12,11 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 
+import tech.pegasys.pantheon.util.bytes.Bytes32;
+
 import graphql.Internal;
 import graphql.language.IntValue;
+import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
@@ -29,17 +32,17 @@ public class LongScalar extends GraphQLScalarType {
         "Long is a 64 bit unsigned integer",
         new Coercing<Object, Object>() {
           @Override
-          public String serialize(final Object input) throws CoercingSerializeException {
-            if (input instanceof Long) {
-              return "0x" + Long.toHexString((Long) input);
+          public Number serialize(final Object input) throws CoercingSerializeException {
+            if (input instanceof Number) {
+              return (Number) input;
             }
             throw new CoercingSerializeException("Unable to serialize " + input + " as an Long");
           }
 
           @Override
-          public String parseValue(final Object input) throws CoercingParseValueException {
-            if (input instanceof Long) {
-              return "0x" + Long.toHexString((Long) input);
+          public Number parseValue(final Object input) throws CoercingParseValueException {
+            if (input instanceof Number) {
+              return (Number) input;
             }
             throw new CoercingParseValueException(
                 "Unable to parse variable value " + input + " as an Long");
@@ -47,16 +50,21 @@ public class LongScalar extends GraphQLScalarType {
 
           @Override
           public Object parseLiteral(final Object input) throws CoercingParseLiteralException {
-            if (!(input instanceof IntValue)) {
-              throw new CoercingParseLiteralException(
-                  "Value is not any Long : '" + input + "'");
-            }
             try {
-              return ((IntValue) input).getValue().longValue();
+              if (input instanceof IntValue) {
+                return ((IntValue) input).getValue().longValue();
+              } else if (input instanceof StringValue) {
+                final String value = ((StringValue) input).getValue().toLowerCase();
+                if (value.startsWith("0x")) {
+                  return Bytes32.fromHexStringLenient(value).asUInt256().toLong();
+                } else {
+                  return Long.parseLong(value);
+                }
+              }
             } catch (final NumberFormatException e) {
-              throw new CoercingParseLiteralException(
-                  "Value is not any Long : '" + input + "'");
+              // fall through
             }
+            throw new CoercingParseLiteralException("Value is not any Long : '" + input + "'");
           }
         });
   }
