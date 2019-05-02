@@ -193,6 +193,10 @@ final class DeFramer extends ByteToMessageDecoder {
     } else if (cause instanceof IOException) {
       // IO failures are routine when communicating with random peers across the network.
       LOG.debug("IO error while processing incoming message", throwable);
+    } else if (cause instanceof IllegalArgumentException) {
+      // We do assertions on the protocol requirements, such as not using port 0.
+      // When we get exceptions for this we get a lot of them.
+      LOG.debug("Protocol error while processing incoming message", throwable);
     } else {
       LOG.error("Exception while processing incoming message", throwable);
     }

@@ -15,6 +15,7 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 import tech.pegasys.pantheon.util.uint.UInt256;
 
 import graphql.Internal;
+import graphql.language.IntValue;
 import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
@@ -49,18 +50,16 @@ public class BigIntScalar extends GraphQLScalarType {
 
           @Override
           public UInt256 parseLiteral(final Object input) throws CoercingParseLiteralException {
-            if (!(input instanceof StringValue)) {
-              throw new CoercingParseLiteralException(
-                  "Value is not any BigInt : '" + String.valueOf(input) + "'");
-            }
-            UInt256 result;
             try {
-              result = UInt256.fromHexString(((StringValue) input).getValue());
-            } catch (IllegalArgumentException e) {
-              throw new CoercingParseLiteralException(
-                  "Value is not any BigInt : '" + String.valueOf(input) + "'");
+              if (input instanceof StringValue) {
+                return UInt256.fromHexString(((StringValue) input).getValue());
+              } else if (input instanceof IntValue) {
+                return UInt256.of(((IntValue) input).getValue());
+              }
+            } catch (final IllegalArgumentException e) {
+              // fall through
             }
-            return result;
+            throw new CoercingParseLiteralException("Value is not any BigInt : '" + input + "'");
           }
         });
   }

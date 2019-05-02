@@ -13,7 +13,7 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.scalar;
 
 import graphql.Internal;
-import graphql.language.StringValue;
+import graphql.language.IntValue;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
@@ -47,19 +47,16 @@ public class LongScalar extends GraphQLScalarType {
 
           @Override
           public Object parseLiteral(final Object input) throws CoercingParseLiteralException {
-            if (!(input instanceof StringValue)) {
+            if (!(input instanceof IntValue)) {
               throw new CoercingParseLiteralException(
-                  "Value is not any Long : '" + String.valueOf(input) + "'");
+                  "Value is not any Long : '" + input + "'");
             }
-            Long result;
             try {
-              String inputString = ((StringValue) input).getValue();
-              result = Long.decode(inputString);
-            } catch (NumberFormatException e) {
+              return ((IntValue) input).getValue().longValue();
+            } catch (final NumberFormatException e) {
               throw new CoercingParseLiteralException(
-                  "Value is not any Long : '" + String.valueOf(input) + "'");
+                  "Value is not any Long : '" + input + "'");
             }
-            return result;
           }
         });
   }
