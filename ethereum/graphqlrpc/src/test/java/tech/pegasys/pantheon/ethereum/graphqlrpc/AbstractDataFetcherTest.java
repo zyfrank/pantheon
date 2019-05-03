@@ -14,7 +14,6 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import static org.mockito.Mockito.when;
 
-import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter.NormalBlockAdapter;
 import tech.pegasys.pantheon.ethereum.p2p.wire.Capability;
