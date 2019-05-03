@@ -28,7 +28,7 @@ public class BlockDataFetcherTest extends AbstractDataFetcherTest {
   @Test
   public void bothNumberAndHashThrows() throws Exception {
     final Hash fakedHash = Hash.hash(BytesValue.of(1));
-    when(environment.getArgument(eq("number"))).thenReturn(Long.valueOf(1));
+    when(environment.getArgument(eq("number"))).thenReturn(1L);
     when(environment.getArgument(eq("hash"))).thenReturn(fakedHash);
 
     thrown.expect(CustomException.class);
@@ -38,7 +38,7 @@ public class BlockDataFetcherTest extends AbstractDataFetcherTest {
   @Test
   public void onlyNumber() throws Exception {
 
-    when(environment.getArgument(eq("number"))).thenReturn(Long.valueOf(1));
+    when(environment.getArgument(eq("number"))).thenReturn(1L);
     when(environment.getArgument(eq("hash"))).thenReturn(null);
 
     when(environment.getContext()).thenReturn(context);

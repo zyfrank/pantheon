@@ -17,8 +17,8 @@ import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 
 import graphql.schema.DataFetchingEnvironment;
 
-public abstract class AdapterBase {
-  protected BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
+abstract class AdapterBase {
+  BlockchainQuery getBlockchainQuery(final DataFetchingEnvironment environment) {
     return ((GraphQLDataFetcherContext) environment.getContext()).getBlockchainQuery();
   }
 }

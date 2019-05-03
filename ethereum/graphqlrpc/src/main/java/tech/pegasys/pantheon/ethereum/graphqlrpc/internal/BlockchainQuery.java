@@ -99,7 +99,7 @@ public class BlockchainQuery {
    * @param blockNumber The height of the block being queried.
    * @return The number of transactions sent from the given address.
    */
-  public long getTransactionCount(final Address address, final long blockNumber) {
+  private long getTransactionCount(final Address address, final long blockNumber) {
     return getWorldState(blockNumber)
         .map(worldState -> worldState.get(address))
         .map(Account::getNonce)

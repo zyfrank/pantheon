@@ -41,7 +41,7 @@ public class EthGraphQLRpcHttpBySpecTest extends AbstractEthGraphQLRpcHttpServic
 
   @Parameters(name = "{index}: {0}")
   public static Collection<String> specs() {
-    final List<String> specs = new ArrayList<String>();
+    final List<String> specs = new ArrayList<>();
 
     specs.add("eth_blockNumber");
     specs.add("eth_getTransactionByHash");

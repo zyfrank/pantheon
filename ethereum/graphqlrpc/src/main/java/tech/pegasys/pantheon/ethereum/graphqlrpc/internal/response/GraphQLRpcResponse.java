@@ -17,9 +17,9 @@ import com.google.common.base.Objects;
 public abstract class GraphQLRpcResponse {
   public abstract GraphQLRpcResponseType getType();
 
-  protected Object result;
+  private final Object result;
 
-  public GraphQLRpcResponse(final Object result) {
+  GraphQLRpcResponse(final Object result) {
     this.result = result;
   }
 

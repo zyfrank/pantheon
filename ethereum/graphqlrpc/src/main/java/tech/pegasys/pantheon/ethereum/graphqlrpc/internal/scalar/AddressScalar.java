@@ -52,13 +52,11 @@ public class AddressScalar extends GraphQLScalarType {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException("Value is not any Address : '" + input + "'");
             }
-            final Address result;
             try {
-              result = Address.fromHexStringStrict(((StringValue) input).getValue());
+              return Address.fromHexStringStrict(((StringValue) input).getValue());
             } catch (final IllegalArgumentException e) {
               throw new CoercingParseLiteralException("Value is not any Address : '" + input + "'");
             }
-            return result;
           }
         });
   }

@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 
-public class RpcApis {
+class RpcApis {
 
   public static final RpcApi ETH = new RpcApi("ETH");
   public static final RpcApi DEBUG = new RpcApi("DEBUG");

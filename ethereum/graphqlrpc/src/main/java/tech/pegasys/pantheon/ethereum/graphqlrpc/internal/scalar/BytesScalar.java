@@ -52,13 +52,11 @@ public class BytesScalar extends GraphQLScalarType {
             if (!(input instanceof StringValue)) {
               throw new CoercingParseLiteralException("Value is not any Bytes : '" + input + "'");
             }
-            final BytesValue result;
             try {
-              result = BytesValue.fromHexString(((StringValue) input).getValue());
+              return BytesValue.fromHexString(((StringValue) input).getValue());
             } catch (final IllegalArgumentException e) {
               throw new CoercingParseLiteralException("Value is not any Bytes : '" + input + "'");
             }
-            return result;
           }
         });
   }

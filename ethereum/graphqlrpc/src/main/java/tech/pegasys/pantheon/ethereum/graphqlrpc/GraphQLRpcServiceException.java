@@ -12,7 +12,7 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
-public class GraphQLRpcServiceException extends RuntimeException {
+class GraphQLRpcServiceException extends RuntimeException {
 
   public GraphQLRpcServiceException(final String message) {
     super(message);

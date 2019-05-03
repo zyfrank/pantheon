@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
-public class TopicsParameter {
+class TopicsParameter {
 
   private final List<List<LogTopic>> queryTopics = new ArrayList<>();
 

@@ -59,11 +59,12 @@ public class TransactionAdapter extends AdapterBase {
     if (bn != null) {
       blockNumber = bn;
     }
-    final Optional<MutableWorldState> ws = query.getWorldState(blockNumber);
-    return ws.map(
-        mutableWorldState ->
-            new AccountAdapter(
-                mutableWorldState.get(transactionWithMetadata.getTransaction().getSender())));
+    return query
+        .getWorldState(blockNumber)
+        .map(
+            mutableWorldState ->
+                new AccountAdapter(
+                    mutableWorldState.get(transactionWithMetadata.getTransaction().getSender())));
   }
 
   @SuppressWarnings("unused")
@@ -74,14 +75,15 @@ public class TransactionAdapter extends AdapterBase {
     if (bn != null) {
       blockNumber = bn;
     }
-    final Optional<MutableWorldState> ws = query.getWorldState(blockNumber);
-    if (ws.isPresent()) {
-      final Optional<Address> to = transactionWithMetadata.getTransaction().getTo();
-      if (to.isPresent()) {
-        return Optional.of(new AccountAdapter(ws.get().get(to.get())));
-      }
-    }
-    return Optional.empty();
+
+    return query
+        .getWorldState(blockNumber)
+        .flatMap(
+            ws ->
+                transactionWithMetadata
+                    .getTransaction()
+                    .getTo()
+                    .map(addr -> new AccountAdapter(ws.get(addr))));
   }
 
   public Optional<UInt256> getValue() {
@@ -112,32 +114,15 @@ public class TransactionAdapter extends AdapterBase {
 
   @SuppressWarnings("unused")
   public Optional<Long> getStatus(final DataFetchingEnvironment environment) {
-    final BlockchainQuery query = getBlockchainQuery(environment);
-    final Transaction tran = transactionWithMetadata.getTransaction();
-    if (tran != null) {
-      try {
-        final Hash hash = tran.hash();
-        if (hash != null) {
-          final Optional<TransactionReceiptWithMetadata> rpt =
-              query.transactionReceiptByTransactionHash(hash);
-          if (rpt.isPresent()) {
-            final TransactionReceipt receipt = rpt.get().getReceipt();
-            if (receipt != null) {
-              final int status = receipt.getStatus();
-              // -1 mean no status
-              if (status == -1) {
-                return Optional.empty();
-              }
-              return Optional.of((long) status);
-            }
-          }
-        }
-      } catch (final Exception e) {
-        return Optional.empty();
-      }
-    }
-
-    return Optional.empty();
+    return Optional.ofNullable(transactionWithMetadata.getTransaction())
+        .map(Transaction::hash)
+        .flatMap(rpt -> getBlockchainQuery(environment).transactionReceiptByTransactionHash(rpt))
+        .map(TransactionReceiptWithMetadata::getReceipt)
+        .flatMap(
+            receipt ->
+                receipt.getStatus() == -1
+                    ? Optional.empty()
+                    : Optional.of((long) receipt.getStatus()));
   }
 
   @SuppressWarnings("unused")

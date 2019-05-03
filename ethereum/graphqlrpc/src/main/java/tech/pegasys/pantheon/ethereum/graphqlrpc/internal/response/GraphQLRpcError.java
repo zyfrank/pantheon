@@ -114,6 +114,7 @@ public enum GraphQLRpcError {
     return message;
   }
 
+  @SuppressWarnings("unused")
   @JsonCreator
   public static GraphQLRpcError fromJson(
       @JsonProperty("code") final int code, @JsonProperty("message") final String message) {

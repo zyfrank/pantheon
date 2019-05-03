@@ -22,7 +22,7 @@ import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.language.SourceLocation;
 
-public class CustomException extends RuntimeException implements GraphQLError {
+class CustomException extends RuntimeException implements GraphQLError {
   private final int errorCode;
 
   CustomException(final GraphQLRpcError error) {

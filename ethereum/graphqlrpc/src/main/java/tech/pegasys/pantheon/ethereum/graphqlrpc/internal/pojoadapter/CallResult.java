@@ -14,7 +14,7 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 
-public class CallResult {
+class CallResult {
   private final Long status;
   private final Long gasUsed;
   private final BytesValue data;

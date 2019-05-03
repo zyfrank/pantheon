@@ -31,9 +31,8 @@ import org.mockito.Mock;
 
 public abstract class AbstractDataFetcherTest {
 
-  protected DataFetcher<Optional<NormalBlockAdapter>> fetcher;
-  @Mock protected TransactionPool transactionPool;
-  protected GraphQLDataFetchers fetchers;
+  DataFetcher<Optional<NormalBlockAdapter>> fetcher;
+  private GraphQLDataFetchers fetchers;
 
   @Mock protected Set<Capability> supportedCapabilities;
 

@@ -19,9 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import graphql.schema.DataFetchingEnvironment;
-
-public class UncleBlockAdapter extends BlockAdapterBase {
+class UncleBlockAdapter extends BlockAdapterBase {
 
   public UncleBlockAdapter(final BlockHeader uncleHeader) {
     super(uncleHeader);
@@ -39,19 +37,19 @@ public class UncleBlockAdapter extends BlockAdapterBase {
     return Optional.empty();
   }
 
-  public List<NormalBlockAdapter> getOmmers(final DataFetchingEnvironment environment) {
-    return new ArrayList<NormalBlockAdapter>();
+  public List<NormalBlockAdapter> getOmmers() {
+    return new ArrayList<>();
   }
 
-  public Optional<NormalBlockAdapter> getOmmerAt(final DataFetchingEnvironment environment) {
+  public Optional<NormalBlockAdapter> getOmmerAt() {
     return Optional.empty();
   }
 
   public List<TransactionAdapter> getTransactions() {
-    return new ArrayList<TransactionAdapter>();
+    return new ArrayList<>();
   }
 
-  public Optional<TransactionAdapter> getTransactionAt(final DataFetchingEnvironment environment) {
+  public Optional<TransactionAdapter> getTransactionAt() {
     return Optional.empty();
   }
 }
