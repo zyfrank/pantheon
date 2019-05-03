@@ -70,11 +70,6 @@ public class LogAdapter extends AdapterBase {
 
     return query
         .getWorldState(blockNumber)
-        .flatMap(
-            ws ->
-                query
-                    .transactionByHash(logWithMetadata.getTransactionHash())
-                    .flatMap(tx -> tx.getTransaction().getTo())
-                    .map(addr -> new AccountAdapter(ws.get(addr))));
+        .map(ws -> new AccountAdapter(ws.get(logWithMetadata.getAddress())));
   }
 }
