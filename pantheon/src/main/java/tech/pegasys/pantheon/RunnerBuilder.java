@@ -301,8 +301,7 @@ public class RunnerBuilder {
     nodePermissioningController.ifPresent(
         n ->
             n.setInsufficientPeersPermissioningProvider(
-                new InsufficientPeersPermissioningProvider(
-                    networkRunner.getNetwork(), network::getLocalEnode, bootnodesAsEnodeURLs)));
+                new InsufficientPeersPermissioningProvider(network, bootnodesAsEnodeURLs)));
 
     final TransactionPool transactionPool = pantheonController.getTransactionPool();
     final MiningCoordinator miningCoordinator = pantheonController.getMiningCoordinator();
