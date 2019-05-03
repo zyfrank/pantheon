@@ -24,10 +24,14 @@ import tech.pegasys.pantheon.util.NetworkUtility;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -35,9 +39,11 @@ import graphql.GraphQL;
 import graphql.GraphQLError;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.Json;
@@ -53,20 +59,19 @@ public class GraphQLRpcHttpService {
 
   private static final InetSocketAddress EMPTY_SOCKET_ADDRESS = new InetSocketAddress("0.0.0.0", 0);
   private static final String APPLICATION_JSON = "application/json";
-  // private static final GraphQLRpcResponse NO_RESPONSE = new
-  // GraphQLRpcNoResponse();
   private static final String EMPTY_RESPONSE = "";
+
+  private static final TypeReference<Map<String, Object>> MAP_TYPE =
+      new TypeReference<Map<String, Object>>() {};
 
   private final Vertx vertx;
   private final GraphQLRpcConfiguration config;
-  // private final Map<String, JsonRpcMethod> jsonRpcMethods;
   private final Path dataDir;
 
   private HttpServer httpServer;
 
   private final GraphQL graphQL;
 
-  // as GraphQL dataFetcher context data
   private final GraphQLDataFetcherContext dataFetcherContext;
 
   /**
@@ -119,6 +124,7 @@ public class GraphQLRpcHttpService {
     router.route("/").method(HttpMethod.GET).handler(this::handleEmptyRequest);
     router
         .route("/graphql")
+        .method(HttpMethod.GET)
         .method(HttpMethod.POST)
         .produces(APPLICATION_JSON)
         .handler(this::handleGraphQLRPCRequest);
@@ -185,41 +191,87 @@ public class GraphQLRpcHttpService {
     return urlForSocketAddress("http", socketAddress());
   }
 
-  private void handleGraphQLRPCRequest(final RoutingContext routingContext) {
-    try {
-      final String graphQuery = routingContext.getBodyAsString().trim();
-      handleGraphQLSingleRequest(routingContext, graphQuery);
-
-    } catch (final DecodeException ex) {
-      handleGraphQLRpcError(routingContext, ex);
-    }
-  }
-
   // Facilitate remote health-checks in AWS, inter alia.
   private void handleEmptyRequest(final RoutingContext routingContext) {
     routingContext.response().setStatusCode(201).end();
   }
 
-  private void handleGraphQLSingleRequest(
-      final RoutingContext routingContext, final String request) {
-    final HttpServerResponse response = routingContext.response();
-    vertx.executeBlocking(
-        future -> {
-          final GraphQLRpcResponse graphQLRpcResponse = process(request);
-          future.complete(graphQLRpcResponse);
-        },
-        false,
-        (res) -> {
-          if (res.failed()) {
-            response.setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code()).end();
-            return;
-          }
+  private void handleGraphQLRPCRequest(final RoutingContext routingContext) {
+    try {
+      final String query;
+      final String operationName;
+      final Map<String, Object> variables;
+      final HttpServerRequest request = routingContext.request();
 
-          final GraphQLRpcResponse graphQLRpcResponse = (GraphQLRpcResponse) res.result();
-          response.setStatusCode(status(graphQLRpcResponse).code());
-          response.putHeader("Content-Type", APPLICATION_JSON);
-          response.end(serialise(graphQLRpcResponse));
-        });
+      switch (request.method()) {
+        case GET:
+          query = request.getParam("query");
+          operationName = request.getParam("operationName");
+          final String variableString = request.getParam("variables");
+          if (variableString != null) {
+            variables = Json.decodeValue(variableString, MAP_TYPE);
+          } else {
+            variables = null;
+          }
+          break;
+        case POST:
+          if (request.getHeader(HttpHeaders.CONTENT_TYPE).equalsIgnoreCase(APPLICATION_JSON)) {
+
+            final String requestBody = routingContext.getBodyAsString().trim();
+            final GraphQLJsonRequest jsonRequest =
+                Json.decodeValue(requestBody, GraphQLJsonRequest.class);
+            query = jsonRequest.query;
+            operationName = jsonRequest.operationName;
+            variables = jsonRequest.variables;
+          } else {
+            // treat all else as applicaiton/graphql
+            query = routingContext.getBodyAsString().trim();
+            operationName = null;
+            variables = null;
+          }
+          break;
+        default:
+          routingContext
+              .response()
+              .setStatusCode(HttpResponseStatus.METHOD_NOT_ALLOWED.code())
+              .end();
+          return;
+      }
+
+      final HttpServerResponse response = routingContext.response();
+      vertx.executeBlocking(
+          future -> {
+            try {
+              final GraphQLRpcResponse graphQLRpcResponse =
+                  process(query, operationName, variables);
+              future.complete(graphQLRpcResponse);
+            } catch (final Exception e) {
+              future.fail(e);
+            }
+          },
+          false,
+          (res) -> {
+            response.putHeader("Content-Type", APPLICATION_JSON);
+            if (res.failed()) {
+              response.setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
+              response.end(
+                  serialise(
+                      new GraphQLRpcErrorResponse(
+                          Collections.singletonMap(
+                              "errors",
+                              Collections.singletonList(
+                                  Collections.singletonMap(
+                                      "message", res.cause().getMessage()))))));
+            } else {
+              final GraphQLRpcResponse graphQLRpcResponse = (GraphQLRpcResponse) res.result();
+              response.setStatusCode(status(graphQLRpcResponse).code());
+              response.end(serialise(graphQLRpcResponse));
+            }
+          });
+
+    } catch (final DecodeException ex) {
+      handleGraphQLRpcError(routingContext, ex);
+    }
   }
 
   private HttpResponseStatus status(final GraphQLRpcResponse response) {
@@ -245,9 +297,15 @@ public class GraphQLRpcHttpService {
     return Json.encodePrettily(response.getResult());
   }
 
-  private GraphQLRpcResponse process(final String requestJson) {
+  private GraphQLRpcResponse process(
+      final String requestJson, final String operationName, final Map<String, Object> variables) {
     final ExecutionInput executionInput =
-        ExecutionInput.newExecutionInput().query(requestJson).context(dataFetcherContext).build();
+        ExecutionInput.newExecutionInput()
+            .query(requestJson)
+            .operationName(operationName)
+            .variables(variables)
+            .context(dataFetcherContext)
+            .build();
     final ExecutionResult result = graphQL.execute(executionInput);
     final Map<String, Object> toSpecificationResult = result.toSpecification();
     final List<GraphQLError> errors = result.getErrors();
@@ -258,10 +316,47 @@ public class GraphQLRpcHttpService {
     }
   }
 
-  private void handleGraphQLRpcError(final RoutingContext routingContext, final Object errors) {
+  private void handleGraphQLRpcError(final RoutingContext routingContext, final Exception ex) {
+    LOG.debug("Error handling GraphQL request", ex);
     routingContext
         .response()
         .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
-        .end(Json.encode(new GraphQLRpcErrorResponse(errors)));
+        .end(Json.encode(new GraphQLRpcErrorResponse(ex.getMessage())));
+  }
+}
+
+class GraphQLJsonRequest {
+  String query;
+  String operationName;
+  Map<String, Object> variables;
+
+  @JsonGetter
+  public String getQuery() {
+    return query;
+  }
+
+  @JsonSetter
+  public void setQuery(final String query) {
+    this.query = query;
+  }
+
+  @JsonGetter
+  public String getOperationName() {
+    return operationName;
+  }
+
+  @JsonSetter
+  public void setOperationName(final String operationName) {
+    this.operationName = operationName;
+  }
+
+  @JsonGetter
+  public Map<String, Object> getVariables() {
+    return variables;
+  }
+
+  @JsonSetter
+  public void setVariables(final Map<String, Object> variables) {
+    this.variables = variables;
   }
 }
