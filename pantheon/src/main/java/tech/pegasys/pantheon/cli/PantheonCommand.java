@@ -273,6 +273,12 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
   private final Integer graphQLHttpPort = DEFAULT_GRAPHQL_RPC_PORT;
 
   @Option(
+      names = {"--graphql-http-cors-origins"},
+      description = "Comma separated origin domain URLs for CORS validation (default: none)")
+  private final CorsAllowedOriginsProperty graphQLHttpCorsAllowedOrigins =
+      new CorsAllowedOriginsProperty();
+
+  @Option(
       names = {"--rpc-http-enabled"},
       description = "Set to start the JSON-RPC HTTP service (default: ${DEFAULT-VALUE})")
   private final Boolean isRpcHttpEnabled = false;
@@ -419,7 +425,7 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
       names = {"--host-whitelist"},
       paramLabel = "<hostname>[,<hostname>...]... or * or all",
       description =
-          "Comma separated list of hostnames to whitelist for JSON-RPC access, or * to accept any host (default: ${DEFAULT-VALUE})",
+          "Comma separated list of hostnames to whitelist for RPC access, or * to accept any host (default: ${DEFAULT-VALUE})",
       defaultValue = "localhost,127.0.0.1")
   private final JsonRPCWhitelistHostsProperty hostsWhitelist = new JsonRPCWhitelistHostsProperty();
 
@@ -752,17 +758,14 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
         commandLine,
         "--graphql-http-enabled",
         !isRpcHttpEnabled,
-        asList(
-            "--graphql-http-api",
-            //          "--rpc-http-apis",
-            //          "--rpc-http-cors-origins",
-            "--graphql-http-host",
-            "--graphql-http-port"));
+        asList("--graphql-http-cors-origins", "--graphql-http-host", "--graphql-http-port"));
 
     final GraphQLRpcConfiguration graphQLRpcConfiguration = GraphQLRpcConfiguration.createDefault();
     graphQLRpcConfiguration.setEnabled(isGraphQLHttpEnabled);
     graphQLRpcConfiguration.setHost(graphQLHttpHost);
     graphQLRpcConfiguration.setPort(graphQLHttpPort);
+    graphQLRpcConfiguration.setHostsWhitelist(hostsWhitelist);
+    graphQLRpcConfiguration.setCorsAllowedDomains(graphQLHttpCorsAllowedOrigins);
 
     return graphQLRpcConfiguration;
   }

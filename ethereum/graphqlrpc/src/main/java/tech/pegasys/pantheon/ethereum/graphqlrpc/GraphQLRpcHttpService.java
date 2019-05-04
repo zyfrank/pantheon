@@ -13,8 +13,10 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Streams.stream;
 import static tech.pegasys.pantheon.util.NetworkUtility.urlForSocketAddress;
 
+import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLJsonRequest;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcErrorResponse;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcResponse;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.response.GraphQLRpcResponseType;
@@ -27,17 +29,20 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLError;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -50,6 +55,7 @@ import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CorsHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -115,6 +121,15 @@ public class GraphQLRpcHttpService {
     // Handle graphql rpc requests
     final Router router = Router.router(vertx);
 
+    // Verify Host header to avoid rebind attack.
+    router.route().handler(checkWhitelistHostHeader());
+
+    router
+        .route()
+        .handler(
+            CorsHandler.create(buildCorsRegexFromConfig())
+                .allowedHeader("*")
+                .allowedHeader("content-type"));
     router
         .route()
         .handler(
@@ -137,7 +152,7 @@ public class GraphQLRpcHttpService {
               if (!res.failed()) {
                 resultFuture.complete(null);
                 LOG.info(
-                    "GraphQLRPC service started and listening on {}:{}",
+                    "GraphQL RPC service started and listening on {}:{}",
                     config.getHost(),
                     httpServer.actualPort());
                 return;
@@ -156,6 +171,39 @@ public class GraphQLRpcHttpService {
             });
 
     return resultFuture;
+  }
+
+  private Handler<RoutingContext> checkWhitelistHostHeader() {
+    return event -> {
+      final Optional<String> hostHeader = getAndValidateHostHeader(event);
+      if (config.getHostsWhitelist().contains("*")
+          || (hostHeader.isPresent() && hostIsInWhitelist(hostHeader.get()))) {
+        event.next();
+      } else {
+        event
+            .response()
+            .setStatusCode(403)
+            .putHeader("Content-Type", "application/json; charset=utf-8")
+            .end("{\"message\":\"Host not authorized.\"}");
+      }
+    };
+  }
+
+  private Optional<String> getAndValidateHostHeader(final RoutingContext event) {
+    final Iterable<String> splitHostHeader = Splitter.on(':').split(event.request().host());
+    final long hostPieces = stream(splitHostHeader).count();
+    if (hostPieces > 1) {
+      // If the host contains a colon, verify the host is correctly formed - host [ ":" port ]
+      if (hostPieces > 2 || !Iterables.get(splitHostHeader, 1).matches("\\d{1,5}+")) {
+        return Optional.empty();
+      }
+    }
+    return Optional.ofNullable(Iterables.get(splitHostHeader, 0));
+  }
+
+  private boolean hostIsInWhitelist(final String hostHeader) {
+    return config.getHostsWhitelist().stream()
+        .anyMatch(whitelistEntry -> whitelistEntry.toLowerCase().equals(hostHeader.toLowerCase()));
   }
 
   public CompletableFuture<?> stop() {
@@ -220,11 +268,11 @@ public class GraphQLRpcHttpService {
             final String requestBody = routingContext.getBodyAsString().trim();
             final GraphQLJsonRequest jsonRequest =
                 Json.decodeValue(requestBody, GraphQLJsonRequest.class);
-            query = jsonRequest.query;
-            operationName = jsonRequest.operationName;
-            variables = jsonRequest.variables;
+            query = jsonRequest.getQuery();
+            operationName = jsonRequest.getOperationName();
+            variables = jsonRequest.getVariables();
           } else {
-            // treat all else as applicaiton/graphql
+            // treat all else as application/graphql
             query = routingContext.getBodyAsString().trim();
             operationName = null;
             variables = null;
@@ -323,40 +371,17 @@ public class GraphQLRpcHttpService {
         .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
         .end(Json.encode(new GraphQLRpcErrorResponse(ex.getMessage())));
   }
-}
 
-class GraphQLJsonRequest {
-  String query;
-  String operationName;
-  Map<String, Object> variables;
-
-  @JsonGetter
-  public String getQuery() {
-    return query;
-  }
-
-  @JsonSetter
-  public void setQuery(final String query) {
-    this.query = query;
-  }
-
-  @JsonGetter
-  public String getOperationName() {
-    return operationName;
-  }
-
-  @JsonSetter
-  public void setOperationName(final String operationName) {
-    this.operationName = operationName;
-  }
-
-  @JsonGetter
-  public Map<String, Object> getVariables() {
-    return variables;
-  }
-
-  @JsonSetter
-  public void setVariables(final Map<String, Object> variables) {
-    this.variables = variables;
+  private String buildCorsRegexFromConfig() {
+    if (config.getCorsAllowedDomains().isEmpty()) {
+      return "";
+    }
+    if (config.getCorsAllowedDomains().contains("*")) {
+      return "*";
+    } else {
+      final StringJoiner stringJoiner = new StringJoiner("|");
+      config.getCorsAllowedDomains().stream().filter(s -> !s.isEmpty()).forEach(stringJoiner::add);
+      return stringJoiner.toString();
+    }
   }
 }
