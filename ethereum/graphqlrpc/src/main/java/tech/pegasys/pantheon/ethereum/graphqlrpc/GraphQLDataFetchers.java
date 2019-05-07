@@ -115,11 +115,9 @@ public class GraphQLDataFetchers {
 
       final List<NormalBlockAdapter> results = new ArrayList<>();
       for (long i = from; i <= to; i++) {
-        final BlockWithMetadata<TransactionWithMetadata, Hash> block =
-            blockchain.blockByNumber(i).get();
-        if (block != null) {
-          results.add(new NormalBlockAdapter(block));
-        }
+        final Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block =
+            blockchain.blockByNumber(i);
+        block.ifPresent(e -> results.add(new NormalBlockAdapter(e)));
       }
       return results;
     };

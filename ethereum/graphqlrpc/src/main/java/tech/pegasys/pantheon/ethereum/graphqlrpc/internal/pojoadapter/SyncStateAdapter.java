@@ -40,13 +40,13 @@ public class SyncStateAdapter {
 
   @SuppressWarnings("unused")
   public Optional<Long> getPulledStates() {
-    // currently synchronizer has no this information?
+    // currently synchronizer has no this information
     return Optional.empty();
   }
 
   @SuppressWarnings("unused")
   public Optional<Long> getKnownStates() {
-    // currently synchronizer has no this information?
+    // currently synchronizer has no this information
     return Optional.empty();
   }
 }

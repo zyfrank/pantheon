@@ -155,14 +155,18 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
       arity = "1")
   private final Boolean p2pEnabled = true;
 
-  // Boolean option to indicate if peers should NOT be discovered, default to false indicates that
+  // Boolean option to indicate if peers should NOT be discovered, default to
+  // false indicates that
   // the peers should be discovered by default.
   //
-  // This negative option is required because of the nature of the option that is true when
-  // added on the command line. You can't do --option=false, so false is set as default
+  // This negative option is required because of the nature of the option that is
+  // true when
+  // added on the command line. You can't do --option=false, so false is set as
+  // default
   // and you have not to set the option at all if you want it false.
   // This seems to be the only way it works with Picocli.
-  // Also many other software use the same negative option scheme for false defaults
+  // Also many other software use the same negative option scheme for false
+  // defaults
   // meaning that it's probably the right way to handle disabling options.
   @Option(
       names = {"--discovery-enabled"},
@@ -254,21 +258,21 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
 
   @Option(
       names = {"--graphql-http-enabled"},
-      description = "Set to start the GRAPHQL-RPC HTTP service (default: ${DEFAULT-VALUE})")
+      description = "Set to start the GraphQL-RPC HTTP service (default: ${DEFAULT-VALUE})")
   private final Boolean isGraphQLHttpEnabled = false;
 
   @SuppressWarnings("FieldMayBeFinal") // Because PicoCLI requires Strings to not be final.
   @Option(
       names = {"--graphql-http-host"},
       paramLabel = MANDATORY_HOST_FORMAT_HELP,
-      description = "Host for GRAPHQL-RPC HTTP to listen on (default: ${DEFAULT-VALUE})",
+      description = "Host for GraphQL-RPC HTTP to listen on (default: ${DEFAULT-VALUE})",
       arity = "1")
   private String graphQLHttpHost = autoDiscoverDefaultIP().getHostAddress();
 
   @Option(
       names = {"--graphql-http-port"},
       paramLabel = MANDATORY_PORT_FORMAT_HELP,
-      description = "Port for GRAPHQL-RPC HTTP to listen on (default: ${DEFAULT-VALUE})",
+      description = "Port for GraphQL-RPC HTTP to listen on (default: ${DEFAULT-VALUE})",
       arity = "1")
   private final Integer graphQLHttpPort = DEFAULT_GRAPHQL_RPC_PORT;
 
@@ -617,7 +621,8 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
             "Ethereum Wire Protocol",
             ethereumWireConfigurationBuilder));
 
-    // Create a handler that will search for a config file option and use it for default values
+    // Create a handler that will search for a config file option and use it for
+    // default values
     // and eventually it will run regular parsing of the remaining options.
     final ConfigOptionSearchAndRunHandler configParsingHandler =
         new ConfigOptionSearchAndRunHandler(
@@ -661,7 +666,7 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
         !SyncMode.FAST.equals(syncMode),
         singletonList("--fast-sync-min-peers"));
 
-    //noinspection ConstantConditions
+    // noinspection ConstantConditions
     if (isMiningEnabled && coinbase == null) {
       throw new ParameterException(
           this.commandLine,
@@ -712,7 +717,8 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
   }
 
   private NetworkName getNetwork() {
-    //noinspection ConstantConditions network is not always null but injected by PicoCLI if used
+    // noinspection ConstantConditions network is not always null but injected by
+    // PicoCLI if used
     return network == null ? MAINNET : network;
   }
 
@@ -1080,16 +1086,20 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
     final EthNetworkConfig.Builder builder =
         new EthNetworkConfig.Builder(EthNetworkConfig.getNetworkConfig(network));
 
-    // custom genesis file use comes with specific default values for the genesis file itself
+    // custom genesis file use comes with specific default values for the genesis
+    // file itself
     // but also for the network id and the bootnodes list.
     final File genesisFile = genesisFile();
     if (genesisFile != null) {
 
-      //noinspection ConstantConditions network is not always null but injected by PicoCLI if used
+      // noinspection ConstantConditions network is not always null but injected by
+      // PicoCLI if used
       if (this.network != null) {
-        // We check if network option was really provided by user and not only looking at the
+        // We check if network option was really provided by user and not only looking
+        // at the
         // default value.
-        // if user provided it and provided the genesis file option at the same time, it raises a
+        // if user provided it and provided the genesis file option at the same time, it
+        // raises a
         // conflict error
         throw new ParameterException(
             this.commandLine,
@@ -1100,13 +1110,17 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
       builder.setGenesisConfig(genesisConfig());
 
       if (networkId == null) {
-        // if no network id option is defined on the CLI we have to set a default value from the
+        // if no network id option is defined on the CLI we have to set a default value
+        // from the
         // genesis file.
-        // We do the genesis parsing only in this case as we already have network id constants
+        // We do the genesis parsing only in this case as we already have network id
+        // constants
         // for known networks to speed up the process.
-        // Also we have to parse the genesis as we don't already have a parsed version at this
+        // Also we have to parse the genesis as we don't already have a parsed version
+        // at this
         // stage.
-        // If no chain id is found in the genesis as it's an optional, we use mainnet network id.
+        // If no chain id is found in the genesis as it's an optional, we use mainnet
+        // network id.
         try {
           final GenesisConfigFile genesisConfigFile = GenesisConfigFile.fromConfig(genesisConfig());
           builder.setNetworkId(
@@ -1127,9 +1141,11 @@ public class PantheonCommand implements DefaultCommandValues, Runnable {
       }
 
       if (bootNodes == null) {
-        // We default to an empty bootnodes list if the option is not provided on CLI because
+        // We default to an empty bootnodes list if the option is not provided on CLI
+        // because
         // mainnet bootnodes won't work as the default value for a custom genesis,
-        // so it's better to have an empty list as default value that forces to create a custom one
+        // so it's better to have an empty list as default value that forces to create a
+        // custom one
         // than a useless one that may make user think that it can work when it can't.
         builder.setBootNodes(new ArrayList<>());
       }
