@@ -22,10 +22,10 @@ import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.language.SourceLocation;
 
-class CustomException extends RuntimeException implements GraphQLError {
+class GraphQLRpcException extends RuntimeException implements GraphQLError {
   private final int errorCode;
 
-  CustomException(final GraphQLRpcError error) {
+  GraphQLRpcException(final GraphQLRpcError error) {
 
     super(error.getMessage());
 

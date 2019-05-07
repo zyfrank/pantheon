@@ -77,9 +77,9 @@ public class GraphQLDataFetchers {
           return Optional.of(transaction.hash());
         }
       } catch (final IllegalArgumentException | RLPException e) {
-        throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+        throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
       }
-      throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+      throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
     };
   }
 
@@ -107,7 +107,7 @@ public class GraphQLDataFetchers {
       final long from = dataFetchingEnvironment.getArgument("from");
       final long to = dataFetchingEnvironment.getArgument("to");
       if (from > to) {
-        throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+        throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
       }
 
       final BlockchainQuery blockchain =
@@ -131,7 +131,7 @@ public class GraphQLDataFetchers {
       final Long number = dataFetchingEnvironment.getArgument("number");
       final Bytes32 hash = dataFetchingEnvironment.getArgument("hash");
       if ((number != null) && (hash != null)) {
-        throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+        throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
       }
 
       Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block = Optional.empty();
@@ -161,7 +161,7 @@ public class GraphQLDataFetchers {
           return new AccountAdapter(ws.get().get(addr));
         } else {
           // invalid blocknumber
-          throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+          throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
         }
       }
       // return account on latest block
@@ -172,11 +172,11 @@ public class GraphQLDataFetchers {
         if (acc != null) {
           return new AccountAdapter(acc);
         } else {
-          throw new CustomException(GraphQLRpcError.INTERNAL_ERROR);
+          throw new GraphQLRpcException(GraphQLRpcError.INTERNAL_ERROR);
         }
       }
       // invalid blocknumber
-      throw new CustomException(GraphQLRpcError.INVALID_PARAMS);
+      throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
     };
   }
 

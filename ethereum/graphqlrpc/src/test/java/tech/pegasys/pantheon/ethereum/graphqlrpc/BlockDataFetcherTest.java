@@ -31,7 +31,7 @@ public class BlockDataFetcherTest extends AbstractDataFetcherTest {
     when(environment.getArgument(eq("number"))).thenReturn(1L);
     when(environment.getArgument(eq("hash"))).thenReturn(fakedHash);
 
-    thrown.expect(CustomException.class);
+    thrown.expect(GraphQLRpcException.class);
     fetcher.get(environment);
   }
 
