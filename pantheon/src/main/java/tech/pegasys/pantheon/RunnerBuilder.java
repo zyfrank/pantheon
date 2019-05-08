@@ -265,22 +265,12 @@ public class RunnerBuilder {
         buildNodePermissioningController(
             bootnodesAsEnodeURLs, synchronizer, transactionSimulator, localNodeId);
 
-    final Optional<NodeLocalConfigPermissioningController> nodeWhitelistController =
-        nodePermissioningController
-            .flatMap(
-                n ->
-                    n.getProviders().stream()
-                        .filter(p -> p instanceof NodeLocalConfigPermissioningController)
-                        .findFirst())
-            .map(n -> (NodeLocalConfigPermissioningController) n);
-
-    final NetworkBuilder inactiveNetwork = (caps) -> new NoopP2PNetwork();
-    final NetworkBuilder activeNetwork =
+    NetworkBuilder inactiveNetwork = (caps) -> new NoopP2PNetwork();
+    NetworkBuilder activeNetwork =
         (caps) ->
             DefaultP2PNetwork.builder()
                 .vertx(vertx)
                 .keyPair(keyPair)
-                .nodeLocalConfigPermissioningController(nodeWhitelistController)
                 .config(networkConfig)
                 .peerBlacklist(peerBlacklist)
                 .metricsSystem(metricsSystem)
@@ -325,6 +315,9 @@ public class RunnerBuilder {
         .map(DefaultPeer::fromEnodeURL)
         .forEach(peerNetwork::addMaintainConnectionPeer);
 
+    final Optional<NodeLocalConfigPermissioningController> nodeLocalConfigPermissioningController =
+        nodePermissioningController.flatMap(NodePermissioningController::localConfigController);
+
     Optional<JsonRpcHttpService> jsonRpcHttpService = Optional.empty();
     if (jsonRpcConfiguration.isEnabled()) {
       final Map<String, JsonRpcMethod> jsonRpcMethods =
@@ -341,7 +334,7 @@ public class RunnerBuilder {
               jsonRpcConfiguration.getRpcApis(),
               filterManager,
               accountWhitelistController,
-              nodeWhitelistController,
+              nodeLocalConfigPermissioningController,
               privacyParameters,
               jsonRpcConfiguration,
               webSocketConfiguration,
@@ -391,7 +384,7 @@ public class RunnerBuilder {
               webSocketConfiguration.getRpcApis(),
               filterManager,
               accountWhitelistController,
-              nodeWhitelistController,
+              nodeLocalConfigPermissioningController,
               privacyParameters,
               jsonRpcConfiguration,
               webSocketConfiguration,
