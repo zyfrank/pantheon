@@ -83,17 +83,17 @@ public final class RunnerTest {
 
   @Test
   public void getFixedNodes() {
-    EnodeURL staticNode =
+    final EnodeURL staticNode =
         EnodeURL.fromString(
             "enode://8f4b88336cc40ef2516d8b27df812e007fb2384a61e93635f1899051311344f3dcdbb49a4fe49a79f66d2f589a9f282e8cc4f1d7381e8ef7e4fcc6b0db578c77@127.0.0.1:30301");
-    EnodeURL bootnode =
+    final EnodeURL bootnode =
         EnodeURL.fromString(
             "enode://8f4b88336cc40ef2516d8b27df812e007fb2384a61e93635f1899051311344f3dcdbb49a4fe49a79f66d2f589a9f282e8cc4f1d7381e8ef7e4fcc6b0db578c77@127.0.0.1:30302");
-    final List<EnodeURL> bootnodes = new ArrayList<EnodeURL>();
+    final List<EnodeURL> bootnodes = new ArrayList<>();
     bootnodes.add(bootnode);
-    Collection<EnodeURL> staticNodes = new ArrayList<EnodeURL>();
+    final Collection<EnodeURL> staticNodes = new ArrayList<>();
     staticNodes.add(staticNode);
-    Collection<EnodeURL> fixedNodes = RunnerBuilder.getFixedNodes(bootnodes, staticNodes);
+    final Collection<EnodeURL> fixedNodes = RunnerBuilder.getFixedNodes(bootnodes, staticNodes);
     assertThat(fixedNodes).containsExactlyInAnyOrder(staticNode, bootnode);
     // bootnodes should be unchanged
     assertThat(bootnodes).containsExactly(bootnode);
@@ -350,7 +350,7 @@ public final class RunnerTest {
   private GraphQLRpcConfiguration graphQLRpcConfiguration() {
     final GraphQLRpcConfiguration configuration = GraphQLRpcConfiguration.createDefault();
     configuration.setPort(0);
-    configuration.setEnabled(true);
+    configuration.setEnabled(false);
     return configuration;
   }
 
