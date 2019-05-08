@@ -359,7 +359,8 @@ public class RunnerBuilder {
       GraphQL graphQL = null;
       try {
         graphQL = GraphQLProvider.buildGraphQL(fetchers);
-      } catch (final IOException ignored) {
+      } catch (final IOException ioe) {
+        throw new RuntimeException(ioe);
       }
 
       graphQLRpcHttpService =
