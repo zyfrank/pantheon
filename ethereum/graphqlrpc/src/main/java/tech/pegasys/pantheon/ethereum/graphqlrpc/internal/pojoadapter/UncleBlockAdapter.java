@@ -19,9 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 class UncleBlockAdapter extends BlockAdapterBase {
 
-  public UncleBlockAdapter(final BlockHeader uncleHeader) {
+  UncleBlockAdapter(final BlockHeader uncleHeader) {
     super(uncleHeader);
   }
 

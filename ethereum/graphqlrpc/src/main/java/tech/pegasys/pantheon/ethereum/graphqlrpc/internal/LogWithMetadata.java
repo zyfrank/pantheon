@@ -33,7 +33,7 @@ public class LogWithMetadata {
   private final List<LogTopic> topics;
   private final boolean removed;
 
-  private LogWithMetadata(
+  LogWithMetadata(
       final int logIndex,
       final long blockNumber,
       final Hash blockHash,
@@ -52,28 +52,6 @@ public class LogWithMetadata {
     this.data = data;
     this.topics = topics;
     this.removed = removed;
-  }
-
-  public static LogWithMetadata create(
-      final int logIndex,
-      final long blockNumber,
-      final Hash blockHash,
-      final Hash transactionHash,
-      final int transactionIndex,
-      final Address address,
-      final BytesValue data,
-      final List<LogTopic> topics,
-      final boolean removed) {
-    return new LogWithMetadata(
-        logIndex,
-        blockNumber,
-        blockHash,
-        transactionHash,
-        transactionIndex,
-        address,
-        data,
-        topics,
-        removed);
   }
 
   // The index of this log within the entire ordered list of logs associated with the block this log

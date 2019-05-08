@@ -46,7 +46,7 @@ public class GraphQLRpcHttpServiceHostWhitelistTest {
 
   @ClassRule public static final TemporaryFolder folder = new TemporaryFolder();
 
-  protected static final Vertx vertx = Vertx.vertx();
+  protected static Vertx vertx;
 
   private static GraphQLRpcHttpService service;
   private static OkHttpClient client;
@@ -57,6 +57,8 @@ public class GraphQLRpcHttpServiceHostWhitelistTest {
 
   @Before
   public void initServerAndClient() throws Exception {
+    vertx = Vertx.vertx();
+
     service = createGraphQLRpcHttpService();
     service.start().join();
 
@@ -83,12 +85,8 @@ public class GraphQLRpcHttpServiceHostWhitelistTest {
     final GraphQLDataFetchers dataFetchers = new GraphQLDataFetchers(supportedCapabilities);
     final GraphQL graphQL = GraphQLProvider.buildGraphQL(dataFetchers);
 
-    final GraphQLRpcHttpService graphQLRpcHttpService =
-        new GraphQLRpcHttpService(
-            vertx, folder.newFolder().toPath(), graphQLRpcConfig, graphQL, dataFetcherContext);
-    graphQLRpcHttpService.start().join();
-
-    return graphQLRpcHttpService;
+    return new GraphQLRpcHttpService(
+        vertx, folder.newFolder().toPath(), graphQLRpcConfig, graphQL, dataFetcherContext);
   }
 
   private static GraphQLRpcConfiguration createGraphQLRpcConfig() {
@@ -99,7 +97,10 @@ public class GraphQLRpcHttpServiceHostWhitelistTest {
 
   @After
   public void shutdownServer() {
+    client.dispatcher().executorService().shutdown();
+    client.connectionPool().evictAll();
     service.stop().join();
+    vertx.close();
   }
 
   @Test

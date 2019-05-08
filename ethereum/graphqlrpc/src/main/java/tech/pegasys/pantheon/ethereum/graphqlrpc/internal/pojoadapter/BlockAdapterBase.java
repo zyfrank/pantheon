@@ -16,8 +16,8 @@ import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.Hash;
 import tech.pegasys.pantheon.ethereum.core.LogTopic;
-import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.Wei;
+import tech.pegasys.pantheon.ethereum.core.WorldState;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.GraphQLDataFetcherContext;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import com.google.common.primitives.Longs;
 import graphql.schema.DataFetchingEnvironment;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 public class BlockAdapterBase extends AdapterBase {
 
   private final BlockHeader header;
@@ -49,7 +50,6 @@ public class BlockAdapterBase extends AdapterBase {
     this.header = header;
   }
 
-  @SuppressWarnings("unused")
   public Optional<NormalBlockAdapter> getParent(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     final Hash parentHash = header.getParentHash();
@@ -68,22 +68,18 @@ public class BlockAdapterBase extends AdapterBase {
     return Optional.of(BytesValue.wrap(bytes));
   }
 
-  @SuppressWarnings("unused")
   public Optional<Bytes32> getTransactionsRoot() {
     return Optional.of(header.getTransactionsRoot());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Bytes32> getStateRoot() {
     return Optional.of(header.getStateRoot());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Bytes32> getReceiptsRoot() {
     return Optional.of(header.getReceiptsRoot());
   }
 
-  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getMiner(final DataFetchingEnvironment environment) {
 
     final BlockchainQuery query = getBlockchainQuery(environment);
@@ -112,7 +108,6 @@ public class BlockAdapterBase extends AdapterBase {
     return Optional.of(UInt256.of(header.getTimestamp()));
   }
 
-  @SuppressWarnings("unused")
   public Optional<BytesValue> getLogsBloom() {
     return Optional.of(header.getLogsBloom().getBytes());
   }
@@ -125,7 +120,6 @@ public class BlockAdapterBase extends AdapterBase {
     return Optional.of(header.getDifficulty());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Bytes32> getOmmerHash() {
     return Optional.of(header.getOmmersHash());
   }
@@ -135,12 +129,11 @@ public class BlockAdapterBase extends AdapterBase {
     return Optional.of(bn);
   }
 
-  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
 
     final BlockchainQuery query = getBlockchainQuery(environment);
     final long bn = header.getNumber();
-    final MutableWorldState ws = query.getWorldState(bn).get();
+    final WorldState ws = query.getWorldState(bn).get();
 
     if (ws != null) {
       final Address addr = environment.getArgument("address");
@@ -149,7 +142,6 @@ public class BlockAdapterBase extends AdapterBase {
     return Optional.empty();
   }
 
-  @SuppressWarnings("unused")
   public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
 
     final Map<String, Object> filter = environment.getArgument("filter");
@@ -178,13 +170,11 @@ public class BlockAdapterBase extends AdapterBase {
     return results;
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getEstimateGas(final DataFetchingEnvironment environment) {
     final Optional<CallResult> result = executeCall(environment);
     return result.map(CallResult::getGasUsed);
   }
 
-  @SuppressWarnings("unused")
   public Optional<CallResult> getCall(final DataFetchingEnvironment environment) {
     return executeCall(environment);
   }

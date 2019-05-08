@@ -25,7 +25,7 @@ public class TransactionReceiptWithMetadata {
   private final Hash blockHash;
   private final Transaction transaction;
 
-  private TransactionReceiptWithMetadata(
+  TransactionReceiptWithMetadata(
       final TransactionReceipt receipt,
       final Transaction transaction,
       final Hash transactionHash,
@@ -40,18 +40,6 @@ public class TransactionReceiptWithMetadata {
     this.blockHash = blockHash;
     this.blockNumber = blockNumber;
     this.transaction = transaction;
-  }
-
-  public static TransactionReceiptWithMetadata create(
-      final TransactionReceipt receipt,
-      final Transaction transaction,
-      final Hash transactionHash,
-      final int transactionIndex,
-      final long gasUsed,
-      final Hash blockHash,
-      final long blockNumber) {
-    return new TransactionReceiptWithMetadata(
-        receipt, transaction, transactionHash, transactionIndex, gasUsed, blockHash, blockNumber);
   }
 
   public TransactionReceipt getReceipt() {

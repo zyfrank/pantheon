@@ -23,20 +23,20 @@ import graphql.GraphQLError;
 import graphql.language.SourceLocation;
 
 class GraphQLRpcException extends RuntimeException implements GraphQLError {
-  private final int errorCode;
+  private final GraphQLRpcError error;
 
   GraphQLRpcException(final GraphQLRpcError error) {
 
     super(error.getMessage());
 
-    this.errorCode = error.getCode();
+    this.error = error;
   }
 
   @Override
   public Map<String, Object> getExtensions() {
     final Map<String, Object> customAttributes = new LinkedHashMap<>();
 
-    customAttributes.put("errorCode", this.errorCode);
+    customAttributes.put("errorCode", this.error.getCode());
     customAttributes.put("errorMessage", this.getMessage());
 
     return customAttributes;
@@ -49,6 +49,12 @@ class GraphQLRpcException extends RuntimeException implements GraphQLError {
 
   @Override
   public ErrorType getErrorType() {
-    return null;
+    switch (error) {
+      case INVALID_PARAMS:
+        return ErrorType.ValidationError;
+      case INTERNAL_ERROR:
+      default:
+        return ErrorType.DataFetchingException;
+    }
   }
 }

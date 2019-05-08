@@ -14,15 +14,13 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal;
 
 import tech.pegasys.pantheon.ethereum.chain.Blockchain;
 import tech.pegasys.pantheon.ethereum.chain.TransactionLocation;
-import tech.pegasys.pantheon.ethereum.core.Account;
-import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Block;
 import tech.pegasys.pantheon.ethereum.core.BlockBody;
 import tech.pegasys.pantheon.ethereum.core.BlockHeader;
 import tech.pegasys.pantheon.ethereum.core.Hash;
-import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.Transaction;
 import tech.pegasys.pantheon.ethereum.core.TransactionReceipt;
+import tech.pegasys.pantheon.ethereum.core.WorldState;
 import tech.pegasys.pantheon.ethereum.worldstate.WorldStateArchive;
 
 import java.util.ArrayList;
@@ -48,72 +46,6 @@ public class BlockchainQuery {
 
   public WorldStateArchive getWorldStateArchive() {
     return worldStateArchive;
-  }
-
-  /**
-   * Return the block number of the head of the chain.
-   *
-   * @return The block number of the head of the chain.
-   */
-  private long headBlockNumber() {
-    return blockchain.getChainHeadBlockNumber();
-  }
-
-  /**
-   * Returns the number of transactions in the block at the given height.
-   *
-   * @param blockNumber The height of the block being queried.
-   * @return The number of transactions contained in the referenced block.
-   */
-  public Optional<Integer> getTransactionCount(final long blockNumber) {
-    if (!withinValidRange(blockNumber)) {
-      return Optional.empty();
-    }
-    return Optional.of(
-        blockchain
-            .getBlockHashByNumber(blockNumber)
-            .flatMap(this::blockByHashWithTxHashes)
-            .map(BlockWithMetadata::getTransactions)
-            .map(List::size)
-            .orElse(-1));
-  }
-
-  /**
-   * Returns the number of transactions in the block with the given hash.
-   *
-   * @param blockHeaderHash The hash of the block being queried.
-   * @return The number of transactions contained in the referenced block.
-   */
-  public Integer getTransactionCount(final Hash blockHeaderHash) {
-    return blockchain
-        .getBlockBody(blockHeaderHash)
-        .map(body -> body.getTransactions().size())
-        .orElse(-1);
-  }
-
-  /**
-   * Returns the number of transactions sent from the given address in the block at the given
-   * height.
-   *
-   * @param address The address whose sent transactions we want to count.
-   * @param blockNumber The height of the block being queried.
-   * @return The number of transactions sent from the given address.
-   */
-  private long getTransactionCount(final Address address, final long blockNumber) {
-    return getWorldState(blockNumber)
-        .map(worldState -> worldState.get(address))
-        .map(Account::getNonce)
-        .orElse(0L);
-  }
-
-  /**
-   * Returns the number of transactions sent from the given address in the latest block.
-   *
-   * @param address The address whose sent transactions we want to count.
-   * @return The number of transactions sent from the given address.
-   */
-  public long getTransactionCount(final Address address) {
-    return getTransactionCount(address, headBlockNumber());
   }
 
   /**
@@ -191,40 +123,6 @@ public class BlockchainQuery {
   }
 
   /**
-   * Given a block hash, returns the associated block with metadata and a list of transaction hashes
-   * rather than full transactions.
-   *
-   * @param blockHeaderHash The hash of the target block's header.
-   * @return The referenced block.
-   */
-  private Optional<BlockWithMetadata<Hash, Hash>> blockByHashWithTxHashes(
-      final Hash blockHeaderHash) {
-    return blockchain
-        .getBlockHeader(blockHeaderHash)
-        .flatMap(
-            header ->
-                blockchain
-                    .getBlockBody(blockHeaderHash)
-                    .flatMap(
-                        body ->
-                            blockchain
-                                .getTotalDifficultyByHash(blockHeaderHash)
-                                .map(
-                                    (td) -> {
-                                      final List<Hash> txs =
-                                          body.getTransactions().stream()
-                                              .map(Transaction::hash)
-                                              .collect(Collectors.toList());
-                                      final List<Hash> ommers =
-                                          body.getOmmers().stream()
-                                              .map(BlockHeader::getHash)
-                                              .collect(Collectors.toList());
-                                      final int size = new Block(header, body).calculateSize();
-                                      return new BlockWithMetadata<>(header, txs, ommers, td, size);
-                                    })));
-  }
-
-  /**
    * Given a transaction hash, returns the associated transaction.
    *
    * @param transactionHash The hash of the target transaction.
@@ -276,7 +174,7 @@ public class BlockchainQuery {
     }
 
     return Optional.of(
-        TransactionReceiptWithMetadata.create(
+        new TransactionReceiptWithMetadata(
             transactionReceipt,
             transaction,
             transactionHash,
@@ -292,9 +190,12 @@ public class BlockchainQuery {
    * @param blockNumber the block number
    * @return the world state at the block number
    */
-  public Optional<MutableWorldState> getWorldState(final long blockNumber) {
+  public Optional<WorldState> getWorldState(final long blockNumber) {
     final Optional<BlockHeader> header = blockchain.getBlockHeader(blockNumber);
-    return header.map(BlockHeader::getStateRoot).flatMap(worldStateArchive::getMutable);
+    return header
+        .map(BlockHeader::getStateRoot)
+        .flatMap(worldStateArchive::getMutable)
+        .map(mws -> mws); // to satisfy typing
   }
 
   private List<TransactionWithMetadata> formatTransactions(
@@ -305,10 +206,6 @@ public class BlockchainQuery {
       result.add(new TransactionWithMetadata(txs.get(i), blockNumber, blockHash, i));
     }
     return result;
-  }
-
-  private boolean withinValidRange(final long blockNumber) {
-    return blockNumber <= headBlockNumber() && blockNumber >= BlockHeader.GENESIS_BLOCK_NUMBER;
   }
 
   public List<LogWithMetadata> matchingLogs(final Hash blockhash, final LogsQuery query) {
@@ -339,7 +236,7 @@ public class BlockchainQuery {
       for (int logIndex = 0; logIndex < receipt.getLogs().size(); ++logIndex) {
         if (query.matches(receipt.getLogs().get(logIndex))) {
           final LogWithMetadata logWithMetaData =
-              LogWithMetadata.create(
+              new LogWithMetadata(
                   logIndex,
                   number,
                   blockhash,
@@ -368,7 +265,7 @@ public class BlockchainQuery {
     for (int logIndex = 0; logIndex < receipt.getLogs().size(); ++logIndex) {
 
       final LogWithMetadata logWithMetaData =
-          LogWithMetadata.create(
+          new LogWithMetadata(
               logIndex,
               number,
               blockhash,

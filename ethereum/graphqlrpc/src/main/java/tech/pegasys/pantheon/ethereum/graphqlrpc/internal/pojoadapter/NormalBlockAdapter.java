@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import graphql.schema.DataFetchingEnvironment;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 public class NormalBlockAdapter extends BlockAdapterBase {
 
   public NormalBlockAdapter(
@@ -39,17 +40,14 @@ public class NormalBlockAdapter extends BlockAdapterBase {
     return Optional.of(blockWithMetaData.getTransactions().size());
   }
 
-  @SuppressWarnings("unused")
   public Optional<UInt256> getTotalDifficulty() {
     return Optional.of(blockWithMetaData.getTotalDifficulty());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Integer> getOmmerCount() {
     return Optional.of(blockWithMetaData.getOmmers().size());
   }
 
-  @SuppressWarnings("unused")
   public List<UncleBlockAdapter> getOmmers(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     final List<Hash> ommers = blockWithMetaData.getOmmers();
@@ -63,7 +61,6 @@ public class NormalBlockAdapter extends BlockAdapterBase {
     return results;
   }
 
-  @SuppressWarnings("unused")
   public Optional<UncleBlockAdapter> getOmmerAt(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     final int index = environment.getArgument("index");
@@ -85,7 +82,6 @@ public class NormalBlockAdapter extends BlockAdapterBase {
     return results;
   }
 
-  @SuppressWarnings("unused")
   public Optional<TransactionAdapter> getTransactionAt(final DataFetchingEnvironment environment) {
     final int index = environment.getArgument("index");
     final List<TransactionWithMetadata> trans = blockWithMetaData.getTransactions();

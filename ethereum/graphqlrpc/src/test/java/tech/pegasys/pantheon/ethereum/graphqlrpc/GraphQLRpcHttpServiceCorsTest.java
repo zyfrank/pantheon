@@ -53,7 +53,10 @@ public class GraphQLRpcHttpServiceCorsTest {
 
   @After
   public void after() {
+    client.dispatcher().executorService().shutdown();
+    client.connectionPool().evictAll();
     graphQLRpcHttpService.stop().join();
+    vertx.close();
   }
 
   @Test

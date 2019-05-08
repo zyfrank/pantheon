@@ -14,9 +14,9 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
-import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.Transaction;
 import tech.pegasys.pantheon.ethereum.core.TransactionReceipt;
+import tech.pegasys.pantheon.ethereum.core.WorldState;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockchainQuery;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.LogWithMetadata;
@@ -31,6 +31,7 @@ import java.util.Optional;
 
 import graphql.schema.DataFetchingEnvironment;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 public class TransactionAdapter extends AdapterBase {
   private final TransactionWithMetadata transactionWithMetadata;
 
@@ -51,7 +52,6 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.of(transactionWithMetadata.getTransactionIndex());
   }
 
-  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getFrom(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = transactionWithMetadata.getBlockNumber();
@@ -67,7 +67,6 @@ public class TransactionAdapter extends AdapterBase {
                     mutableWorldState.get(transactionWithMetadata.getTransaction().getSender())));
   }
 
-  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getTo(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = transactionWithMetadata.getBlockNumber();
@@ -98,21 +97,18 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.of(transactionWithMetadata.getTransaction().getGasLimit());
   }
 
-  @SuppressWarnings("unused")
   public Optional<BytesValue> getInputData() {
     return Optional.of(transactionWithMetadata.getTransaction().getPayload());
   }
 
-  @SuppressWarnings("unused")
   public Optional<NormalBlockAdapter> getBlock(final DataFetchingEnvironment environment) {
-    final long blockNumber = transactionWithMetadata.getBlockNumber();
+    final Hash blockHash = transactionWithMetadata.getBlockHash();
     final BlockchainQuery query = getBlockchainQuery(environment);
     final Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block =
-        query.blockByNumber(blockNumber);
+        query.blockByHash(blockHash);
     return block.map(NormalBlockAdapter::new);
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getStatus(final DataFetchingEnvironment environment) {
     return Optional.ofNullable(transactionWithMetadata.getTransaction())
         .map(Transaction::hash)
@@ -125,7 +121,6 @@ public class TransactionAdapter extends AdapterBase {
                     : Optional.of((long) receipt.getStatus()));
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getGasUsed(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     final Optional<TransactionReceiptWithMetadata> rpt =
@@ -133,7 +128,6 @@ public class TransactionAdapter extends AdapterBase {
     return rpt.map(TransactionReceiptWithMetadata::getGasUsed);
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getCumulativeGasUsed(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     final Optional<TransactionReceiptWithMetadata> rpt =
@@ -145,7 +139,6 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.empty();
   }
 
-  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getCreatedContract(final DataFetchingEnvironment environment) {
     final boolean contractCreated = transactionWithMetadata.getTransaction().isContractCreation();
     if (contractCreated) {
@@ -159,7 +152,7 @@ public class TransactionAdapter extends AdapterBase {
           blockNumber = bn;
         }
 
-        final Optional<MutableWorldState> ws = query.getWorldState(blockNumber);
+        final Optional<WorldState> ws = query.getWorldState(blockNumber);
         if (ws.isPresent()) {
           return Optional.of(new AccountAdapter(ws.get().get(addr.get())));
         }
@@ -168,7 +161,6 @@ public class TransactionAdapter extends AdapterBase {
     return Optional.empty();
   }
 
-  @SuppressWarnings("unused")
   public List<LogAdapter> getLogs(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     final Hash hash = transactionWithMetadata.getTransaction().hash();

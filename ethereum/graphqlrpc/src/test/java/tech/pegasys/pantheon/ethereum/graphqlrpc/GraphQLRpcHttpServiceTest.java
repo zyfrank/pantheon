@@ -135,7 +135,10 @@ public class GraphQLRpcHttpServiceTest {
   /** Tears down the HTTP server. */
   @AfterClass
   public static void shutdownServer() {
+    client.dispatcher().executorService().shutdown();
+    client.connectionPool().evictAll();
     service.stop().join();
+    vertx.close();
   }
 
   @Test

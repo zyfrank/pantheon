@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import graphql.schema.DataFetchingEnvironment;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 public class LogAdapter extends AdapterBase {
   private final LogWithMetadata logWithMetadata;
 
@@ -37,7 +38,6 @@ public class LogAdapter extends AdapterBase {
     return Optional.of(logWithMetadata.getLogIndex());
   }
 
-  @SuppressWarnings("unused")
   public List<Bytes32> getTopics() {
     final List<LogTopic> topics = logWithMetadata.getTopics();
     final List<Bytes32> result = new ArrayList<>();
@@ -51,7 +51,6 @@ public class LogAdapter extends AdapterBase {
     return Optional.of(logWithMetadata.getData());
   }
 
-  @SuppressWarnings("unused")
   public Optional<TransactionAdapter> getTransaction(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     final Hash hash = logWithMetadata.getTransactionHash();
@@ -59,7 +58,6 @@ public class LogAdapter extends AdapterBase {
     return tran.map(TransactionAdapter::new);
   }
 
-  @SuppressWarnings("unused")
   public Optional<AccountAdapter> getAccount(final DataFetchingEnvironment environment) {
     final BlockchainQuery query = getBlockchainQuery(environment);
     long blockNumber = logWithMetadata.getBlockNumber();

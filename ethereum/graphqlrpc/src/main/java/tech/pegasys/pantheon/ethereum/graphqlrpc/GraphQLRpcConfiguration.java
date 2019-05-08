@@ -12,6 +12,8 @@
  */
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,9 +71,8 @@ public class GraphQLRpcConfiguration {
   }
 
   public void setCorsAllowedDomains(final Collection<String> corsAllowedDomains) {
-    if (corsAllowedDomains != null) {
-      this.corsAllowedDomains = corsAllowedDomains;
-    }
+    checkNotNull(corsAllowedDomains);
+    this.corsAllowedDomains = corsAllowedDomains;
   }
 
   Collection<String> getHostsWhitelist() {
@@ -79,6 +80,7 @@ public class GraphQLRpcConfiguration {
   }
 
   public void setHostsWhitelist(final Collection<String> hostsWhitelist) {
+    checkNotNull(hostsWhitelist);
     this.hostsWhitelist = hostsWhitelist;
   }
 

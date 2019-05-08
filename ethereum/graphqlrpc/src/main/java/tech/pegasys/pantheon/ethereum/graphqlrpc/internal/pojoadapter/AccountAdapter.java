@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import graphql.schema.DataFetchingEnvironment;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 public class AccountAdapter extends AdapterBase {
   private final Account account;
 
@@ -45,7 +46,6 @@ public class AccountAdapter extends AdapterBase {
     return Optional.of(account.getCode());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Bytes32> getStorage(final DataFetchingEnvironment environment) {
     final Bytes32 slot = environment.getArgument("slot");
     return Optional.of(account.getStorageValue(slot.asUInt256()).getBytes());

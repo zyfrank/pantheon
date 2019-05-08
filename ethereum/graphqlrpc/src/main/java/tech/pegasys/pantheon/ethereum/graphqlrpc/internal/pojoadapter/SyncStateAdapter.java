@@ -16,6 +16,7 @@ import tech.pegasys.pantheon.ethereum.core.SyncStatus;
 
 import java.util.Optional;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 public class SyncStateAdapter {
   private final SyncStatus syncStatus;
 
@@ -23,28 +24,23 @@ public class SyncStateAdapter {
     this.syncStatus = syncStatus;
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getStartingBlock() {
     return Optional.of(syncStatus.getStartingBlock());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getCurrentBlock() {
     return Optional.of(syncStatus.getCurrentBlock());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getHighestBlock() {
     return Optional.of(syncStatus.getHighestBlock());
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getPulledStates() {
     // currently synchronizer has no this information
     return Optional.empty();
   }
 
-  @SuppressWarnings("unused")
   public Optional<Long> getKnownStates() {
     // currently synchronizer has no this information
     return Optional.empty();

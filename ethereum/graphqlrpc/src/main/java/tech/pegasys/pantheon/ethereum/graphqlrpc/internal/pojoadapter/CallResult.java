@@ -14,12 +14,13 @@ package tech.pegasys.pantheon.ethereum.graphqlrpc.internal.pojoadapter;
 
 import tech.pegasys.pantheon.util.bytes.BytesValue;
 
+@SuppressWarnings("unused") // reflected by GraphQL
 class CallResult {
   private final Long status;
   private final Long gasUsed;
   private final BytesValue data;
 
-  public CallResult(final Long status, final Long gasUsed, final BytesValue data) {
+  CallResult(final Long status, final Long gasUsed, final BytesValue data) {
     this.status = status;
     this.gasUsed = gasUsed;
     this.data = data;

@@ -13,13 +13,12 @@
 package tech.pegasys.pantheon.ethereum.graphqlrpc;
 
 import tech.pegasys.pantheon.ethereum.blockcreation.MiningCoordinator;
-import tech.pegasys.pantheon.ethereum.core.Account;
 import tech.pegasys.pantheon.ethereum.core.Address;
 import tech.pegasys.pantheon.ethereum.core.Hash;
-import tech.pegasys.pantheon.ethereum.core.MutableWorldState;
 import tech.pegasys.pantheon.ethereum.core.SyncStatus;
 import tech.pegasys.pantheon.ethereum.core.Synchronizer;
 import tech.pegasys.pantheon.ethereum.core.Transaction;
+import tech.pegasys.pantheon.ethereum.core.WorldState;
 import tech.pegasys.pantheon.ethereum.eth.EthProtocol;
 import tech.pegasys.pantheon.ethereum.eth.transactions.TransactionPool;
 import tech.pegasys.pantheon.ethereum.graphqlrpc.internal.BlockWithMetadata;
@@ -134,49 +133,40 @@ public class GraphQLDataFetchers {
         throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
       }
 
-      Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block = Optional.empty();
+      final Optional<BlockWithMetadata<TransactionWithMetadata, Hash>> block;
       if (number != null) {
         block = blockchain.blockByNumber(number);
+      } else if (hash != null) {
+        block = blockchain.blockByHash(Hash.wrap(hash));
       } else {
-        if (hash != null) {
-          block = blockchain.blockByHash(Hash.wrap(hash));
-        }
-      }
-      if (!block.isPresent()) {
         block = blockchain.latestBlock();
       }
       return block.map(NormalBlockAdapter::new);
     };
   }
 
-  DataFetcher<AccountAdapter> getAccountDataFetcher() {
+  DataFetcher<Optional<AccountAdapter>> getAccountDataFetcher() {
     return dataFetchingEnvironment -> {
-      final BlockchainQuery blockchain =
+      final BlockchainQuery blockchainQuery =
           ((GraphQLDataFetcherContext) dataFetchingEnvironment.getContext()).getBlockchainQuery();
       final Address addr = dataFetchingEnvironment.getArgument("address");
       final Long bn = dataFetchingEnvironment.getArgument("blockNumber");
       if (bn != null) {
-        final Optional<MutableWorldState> ws = blockchain.getWorldState(bn);
+        final Optional<WorldState> ws = blockchainQuery.getWorldState(bn);
         if (ws.isPresent()) {
-          return new AccountAdapter(ws.get().get(addr));
-        } else {
-          // invalid blocknumber
+          return Optional.of(new AccountAdapter(ws.get().get(addr)));
+        } else if (bn > blockchainQuery.getBlockchain().getChainHeadBlockNumber()) {
+          // block is past chainhead
           throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
+        } else {
+          // we don't have that block
+          throw new GraphQLRpcException(GraphQLRpcError.CHAIN_HEAD_WORLD_STATE_NOT_AVAILABLE);
         }
       }
       // return account on latest block
-      final long latestBn = blockchain.latestBlock().get().getHeader().getNumber();
-      final Optional<MutableWorldState> ws = blockchain.getWorldState(latestBn);
-      if (ws.isPresent()) {
-        final Account acc = ws.get().get(addr);
-        if (acc != null) {
-          return new AccountAdapter(acc);
-        } else {
-          throw new GraphQLRpcException(GraphQLRpcError.INTERNAL_ERROR);
-        }
-      }
-      // invalid blocknumber
-      throw new GraphQLRpcException(GraphQLRpcError.INVALID_PARAMS);
+      final long latestBn = blockchainQuery.latestBlock().get().getHeader().getNumber();
+      final Optional<WorldState> ows = blockchainQuery.getWorldState(latestBn);
+      return ows.flatMap(ws -> Optional.ofNullable(ws.get(addr))).map(AccountAdapter::new);
     };
   }
 
